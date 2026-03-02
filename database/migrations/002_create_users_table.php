@@ -12,6 +12,7 @@ class CreateUsersTable
             CREATE TABLE tbr_users (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(150) NULL,
+                avatar VARCHAR(255) NULL,
                 gender enum('male', 'female') NULL,
                 phone VARCHAR(50) NULL,
                 address VARCHAR(255) NULL,
@@ -21,7 +22,7 @@ class CreateUsersTable
                 email VARCHAR(150) NULL,
                 username VARCHAR(100) NULL,
                 password VARCHAR(255) NULL,
-                status VARCHAR(50) NULL,
+                status enum('active', 'inactive') NULL,          
 
                 created_at TIMESTAMP NULL,
                 updated_at TIMESTAMP NULL,

@@ -90,6 +90,7 @@
         <script src="/themes/metronic/dist/assets/vendors/apexcharts/apexcharts.min.js"></script>
         <script src="/themes/metronic/dist/assets/js/widgets/general.js"></script>
         <script src="/themes/metronic/dist/assets/js/layouts/demo1.js"></script>
+        <script src="/themes/metronic/dist/assets/vendors/jquery/jquery.min.js"></script>
         <!-- End of Scripts -->
     </body>
 </html>

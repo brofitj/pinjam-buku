@@ -34,9 +34,9 @@ class UserSeeder
 
         $stmt = $db->prepare("
             INSERT INTO tbr_users
-                (name, gender, phone, address, join_date, role_id, email, username, password, status, created_at, updated_at)
+                (name, avatar, gender, phone, address, join_date, role_id, email, username, password, status, created_at, updated_at)
             VALUES
-                (:name, :gender, :phone, :address, :join_date, :role_id, :email, :username, :password, :status, NOW(), NOW())
+                (:name, :avatar, :gender, :phone, :address, :join_date, :role_id, :email, :username, :password, :status, NOW(), NOW())
         ");
 
         $today = date('Y-m-d');
@@ -44,6 +44,7 @@ class UserSeeder
         $users = [
             [
                 'name'      => 'Superadmin',
+                'avatar'    => NULL,
                 'gender'    => 'male',
                 'phone'     => '628111111111',
                 'address'   => 'Jalan Kenangan Block A Nomor 01 Surakarta',
@@ -56,6 +57,7 @@ class UserSeeder
             ],
             [
                 'name'      => 'Librarian',
+                'avatar'    => NULL,
                 'gender'    => 'female',
                 'phone'     => '628222222222',
                 'address'   => 'Jalan Kenangan Block B Nomor 02 Surakarta',
@@ -68,6 +70,7 @@ class UserSeeder
             ],
             [
                 'name'      => 'John Doe',
+                'avatar'    => NULL,
                 'gender'    => 'male',
                 'phone'     => '628333333333',
                 'address'   => 'Jalan Sempit Block C Nomor 03 Surakarta',
@@ -78,11 +81,41 @@ class UserSeeder
                 'password'  => password_hash('member123', PASSWORD_BCRYPT),
                 'status'    => 'active',
             ],
+            [
+                'name'      => 'Susan Doe',
+                'avatar'    => NULL,
+                'gender'    => 'female',
+                'phone'     => '628444444444',
+                'address'   => 'Jalan Sempit Block D Nomor 04 Surakarta',
+                'join_date' => $today,
+                'role_id'   => $memberRole['id'],
+                'email'     => 'susan@mail.com',
+                'username'  => 'susan',
+                'password'  => password_hash('member123', PASSWORD_BCRYPT),
+                'status'    => 'inactive',
+            ],
         ];
+
+        for ($i = 1; $i <= 50; $i++) {
+            $users[] = [
+                'name'      => 'Member ' . $i,
+                'avatar'    => null,
+                'gender'    => $i % 2 === 0 ? 'male' : 'female',
+                'phone'     => '62855' . str_pad((string) $i, 7, '0', STR_PAD_LEFT),
+                'address'   => 'Alamat dummy nomor ' . $i . ' Surakarta',
+                'join_date' => $today,
+                'role_id'   => $memberRole['id'],
+                'email'     => 'member' . $i . '@mail.com',
+                'username'  => 'member' . $i,
+                'password'  => password_hash('member123', PASSWORD_BCRYPT),
+                'status'    => 'active',
+            ];
+        }
 
         foreach ($users as $user) {
             $stmt->execute([
                 ':name'      => $user['name'],
+                ':avatar'    => $user['avatar'],
                 ':gender'    => $user['gender'],
                 ':phone'     => $user['phone'],
                 ':address'   => $user['address'],

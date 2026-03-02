@@ -16,19 +16,27 @@
             </div>
         </div>
         <!-- End of Mobile Logo -->
-        <!--Megamenu Container-->
-        <div class="flex items-stretch" id="megaMenuContainer">
-            <!--Megamenu Inner-->
-            <div class="flex items-stretch [--kt-reparent-mode:prepend] [--kt-reparent-target:body] lg:[--kt-reparent-target:#megaMenuContainer] lg:[--kt-reparent-mode:prepend]" data-kt-reparent="true">
-                <!--Megamenu Wrapper-->
-                <div class="hidden lg:flex lg:items-stretch [--kt-drawer-enable:true] lg:[--kt-drawer-enable:false]" data-kt-drawer="true" data-kt-drawer-class="kt-drawer kt-drawer-start fixed z-10 top-0 bottom-0 w-full me-5 max-w-[250px] p-5 lg:p-0 overflow-auto" id="mega_menu_wrapper">
+        <!-- Breadcrumbs -->
+        <?php if (!empty($breadcrumbs)): ?>
+            <div class="flex [.kt-header_&]:below-lg:hidden items-center gap-1.25 text-xs lg:text-sm font-medium mb-2.5 lg:mb-0 [--kt-reparent-target:#contentContainer] lg:[--kt-reparent-target:#headerContainer] [--kt-reparent-mode:prepend] lg:[--kt-reparent-mode:prepend]" data-kt-reparent="true">
+                <?php foreach ($breadcrumbs as $index => $bc): ?>
+                    <?php if ($index > 0): ?>
+                        <i class="ki-filled ki-right text-muted-foreground text-[10px]"></i>
+                    <?php endif; ?>
 
-                </div>
-                <!--End of Megamenu Wrapper-->
+                    <?php if (!empty($bc['url'])): ?>
+                        <a href="<?= htmlspecialchars($bc['url']) ?>" class="text-secondary-foreground hover:text-primary">
+                            <?= htmlspecialchars($bc['label']) ?>
+                        </a>
+                    <?php else: ?>
+                        <span class="text-secondary-foreground">
+                            <?= htmlspecialchars($bc['label']) ?>
+                        </span>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             </div>
-            <!--End of Megamenu Inner-->
-        </div>
-        <!--End of Megamenu Container-->
+        <?php endif; ?>
+        <!-- End of Breadcrumbs -->
         <!-- Topbar -->
         <div class="flex items-center gap-2.5">
             <!-- User -->
