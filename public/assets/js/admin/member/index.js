@@ -5,13 +5,37 @@ $(function () {
     var $pageInfo  = $('#member_page_info');
     var $prevBtn   = $('#member_prev');
     var $nextBtn   = $('#member_next');
+    var $deleteMemberName = $('#delete_member_name');
+    var $confirmDeleteBtn = $('#confirm_delete_member');
+    var selectedMemberId  = 0;
 
     var currentPage = 1;
     var lastPage    = 1;
     var perPage     = 10;
+    var sortField   = 'name';
+    var sortDir     = 'asc';
+    var isDeleting  = false;
+
+    function closeDeleteModal() {
+        $('[data-kt-modal-dismiss="#delete_member_modal"]').first().trigger('click');
+    }
+
+    function openDeleteModal(memberId, memberName) {
+        selectedMemberId = parseInt(memberId, 10) || 0;
+        $deleteMemberName.text(memberName || '-');
+
+        var $modalTrigger = $('<button>', {
+            type: 'button',
+            'data-kt-modal-toggle': '#delete_member_modal'
+        }).hide();
+
+        $('body').append($modalTrigger);
+        $modalTrigger.trigger('click');
+        $modalTrigger.remove();
+    }
 
     /**
-     * Render members data into table
+     * Render members data into table.
      * @param {Array} members
      */
     function renderTable(members) {
@@ -66,7 +90,7 @@ $(function () {
                         '</a>' +
                     '</td>' +
                     '<td>' +
-                        '<button type="button" class="kt-btn kt-btn-icon kt-btn-ghost" data-member-id="' + member.id + '">' +
+                        '<button type="button" class="kt-btn kt-btn-icon kt-btn-ghost btn-delete-member" data-member-id="' + member.id + '" data-member-name="' + (member.name || '-') + '">' +
                             '<i class="ki-filled ki-trash"></i>' +
                         '</button>' +
                     '</td>' +
@@ -77,7 +101,7 @@ $(function () {
     }
 
     /**
-     * Load members data from API
+     * Load members data from API.
      * @param {*} page 
      */
     function loadMembers(page) {
@@ -104,7 +128,7 @@ $(function () {
                     $countSpan.text(meta.total || data.length || 0);
                 }
 
-                if ($pageInfo && $pageInfo.length) {
+                if ($pageInfo.length) {
                     $pageInfo.text('Halaman ' + currentPage + ' dari ' + lastPage);
                 }
 
@@ -128,14 +152,14 @@ $(function () {
     }
 
     /**
-     * Search input handler
+     * Search input handler.
      */
     $search.on('input', function () {
         loadMembers(1);
     });
 
     /**
-     * Pagination controls
+     * Pagination controls.
      */
     $prevBtn.on('click', function () {
         if (currentPage > 1) loadMembers(currentPage - 1);
@@ -148,10 +172,8 @@ $(function () {
     loadMembers(1);
 
     /**
-     * Sorting controls
+     * Sorting controls.
      */
-    var sortField = 'name';
-    var sortDir   = 'asc';
 
     var $sortControls = $('[data-sort-field]');
 
@@ -169,5 +191,55 @@ $(function () {
         $(this).addClass(sortDir === 'asc' ? 'is-sorted-asc' : 'is-sorted-desc');
 
         loadMembers(1);
+    });
+
+    /**
+     * Delete member handler.
+     */
+    $(document).on('click', '.btn-delete-member', function () {
+        var memberId = $(this).data('member-id');
+        var memberName = $(this).data('member-name');
+
+        openDeleteModal(memberId, memberName);
+    });
+
+    $confirmDeleteBtn.on('click', function () {
+        if (isDeleting) return;
+
+        var memberId = selectedMemberId;
+        if (!memberId) return;
+
+        isDeleting = true;
+        $confirmDeleteBtn.prop('disabled', true).text('Menghapus...');
+
+        $.ajax({
+            url: '/api/members/delete',
+            method: 'POST',
+            dataType: 'json',
+            data: { id: memberId },
+            success: function (res) {
+                if (res && res.success) {
+                    selectedMemberId = 0;
+                    closeDeleteModal();
+                    loadMembers(currentPage);
+                    return;
+                }
+
+                alert((res && res.message) ? res.message : 'Gagal menghapus anggota.');
+            },
+            error: function (xhr) {
+                var message = 'Gagal menghapus anggota.';
+
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+
+                alert(message);
+            },
+            complete: function () {
+                isDeleting = false;
+                $confirmDeleteBtn.prop('disabled', false).text('Hapus');
+            }
+        });
     });
 });

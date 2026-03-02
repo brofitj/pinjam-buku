@@ -112,8 +112,8 @@ ob_start();
     </div>
 </div>
 
-<button class="kt-btn" data-kt-modal-toggle="#modal">Hapus</button>
-<div class="kt-modal" data-kt-modal="true" id="modal">
+<!-- <button class="kt-btn" data-kt-modal-toggle="#modal">Hapus</button> -->
+<div class="kt-modal" data-kt-modal="true" id="delete_member_modal">
     <div class="kt-modal-content max-w-[500px] top-[5%]">
         <div class="kt-modal-header">
             <h3 class="kt-modal-title">Hapus</h3>
@@ -121,7 +121,7 @@ ob_start();
                 type="button"
                 class="kt-modal-close"
                 aria-label="Close modal"
-                data-kt-modal-dismiss="#modal"
+                data-kt-modal-dismiss="#delete_member_modal"
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -143,18 +143,15 @@ ob_start();
         </div>
         <div class="kt-modal-body">
             <div class="text-sm text-foreground font-normal">
-                Data akan dihapus secara permanen. Apakah Anda yakin ingin melanjutkan?
+                Data anggota <span id="delete_member_name" class="font-semibold text-mono">-</span>
+                akan dihapus secara permanen. Apakah Anda yakin ingin melanjutkan?
             </div>
         </div>
         <div class="kt-modal-footer">
             <div></div>
             <div class="flex gap-4">
-                <button
-                    class="kt-btn kt-btn-secondary"
-                    data-kt-modal-dismiss="#modal"
-                >
-                    Batal</button
-                ><button class="kt-btn kt-btn-destructive">Hapus</button>
+                <button class="kt-btn kt-btn-secondary" data-kt-modal-dismiss="#delete_member_modal">Batal</button>
+                <button class="kt-btn kt-btn-destructive" id="confirm_delete_member" type="button">Hapus</button>
             </div>
         </div>
     </div>

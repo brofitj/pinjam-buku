@@ -7,6 +7,18 @@ use App\Core\Database;
 class MemberController
 {
     /**
+     * Ensure authenticated user session exists.
+     */
+    private function isAuthenticated(): bool
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        return isset($_SESSION['user']);
+    }
+
+    /**
      * Return list of members as JSON.
      *
      * @return void
@@ -14,11 +26,7 @@ class MemberController
      */
     public function index(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        if (!isset($_SESSION['user'])) {
+        if (!$this->isAuthenticated()) {
             http_response_code(401);
             header('Content-Type: application/json');
             echo json_encode(['message' => 'Unauthenticated']);
@@ -31,9 +39,7 @@ class MemberController
         $perPage = max(1, min(50, (int)($_GET['per_page'] ?? 10)));
         $offset  = ($page - 1) * $perPage;
 
-        /**
-         * optional: server-side search
-         */
+        // Filter pencarian.
         $q = trim($_GET['q'] ?? '');
         $where  = "r.name = 'member'";
         $params = [];
@@ -53,9 +59,7 @@ class MemberController
             $params[':q_address'] = $like;
         }
 
-        /**
-         * mapping kolom yang boleh di-sort
-         */
+        // Validasi sort_by dan sort_dir.
         $allowedSort = [
             'name'   => 'u.name',
             'gender' => 'u.gender',
@@ -75,9 +79,7 @@ class MemberController
 
         $orderBy = $allowedSort[$sortBy] . ' ' . strtoupper($sortDir);
 
-        /**
-         * hitung total
-         */
+        // Hitung total data untuk pagination.
         $countSql = "
             SELECT COUNT(*) AS total
             FROM tbr_users u
@@ -88,9 +90,7 @@ class MemberController
         $countStmt->execute($params);
         $total = (int)$countStmt->fetchColumn();
 
-        /**
-         * ambil data halaman ini
-         */
+        // Ambil data dengan pagination.
         $dataSql = "
             SELECT u.id, u.name, u.gender, u.email, u.phone, u.address, u.status
             FROM tbr_users u
@@ -119,5 +119,56 @@ class MemberController
                 'last_page' => max(1, (int)ceil($total / $perPage)),
             ],
         ]);
+    }
+
+    /**
+     * Delete member by id via AJAX.
+     */
+    public function delete(): void
+    {
+        header('Content-Type: application/json');
+
+        if (!$this->isAuthenticated()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthenticated']);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        $memberId = (int)($_POST['id'] ?? 0);
+
+        if ($memberId <= 0) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'ID anggota tidak valid.']);
+            return;
+        }
+
+        $db = Database::getInstance();
+
+        $memberStmt = $db->prepare(
+            "SELECT u.id
+             FROM tbr_users u
+             INNER JOIN tbr_roles r ON r.id = u.role_id
+             WHERE u.id = :id AND r.name = 'member'
+             LIMIT 1"
+        );
+        $memberStmt->execute([':id' => $memberId]);
+        $member = $memberStmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$member) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Data anggota tidak ditemukan.']);
+            return;
+        }
+
+        $deleteStmt = $db->prepare('DELETE FROM tbr_users WHERE id = :id LIMIT 1');
+        $deleteStmt->execute([':id' => $memberId]);
+
+        echo json_encode(['success' => true, 'message' => 'Data anggota berhasil dihapus.']);
     }
 }
