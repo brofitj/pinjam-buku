@@ -47,7 +47,6 @@ ob_start();
                     </label>
                 </div>
             </div>
-    
             <div class="kt-card-content">
                 <div id="member_table_wrapper">
                     <div class="kt-scrollable-x-auto">
@@ -112,7 +111,6 @@ ob_start();
     </div>
 </div>
 
-<!-- <button class="kt-btn" data-kt-modal-toggle="#modal">Hapus</button> -->
 <div class="kt-modal" data-kt-modal="true" id="delete_member_modal">
     <div class="kt-modal-content max-w-[500px] top-[5%]">
         <div class="kt-modal-header">

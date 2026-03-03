@@ -34,6 +34,18 @@ $(function () {
         $modalTrigger.remove();
     }
 
+    function showToast(message, variant) {
+        if (window.KTToast && typeof window.KTToast.show === 'function') {
+            window.KTToast.show({
+                message: message,
+                variant: variant
+            });
+            return;
+        }
+
+        alert(message);
+    }
+
     /**
      * Render members data into table.
      * @param {Array} members
@@ -207,7 +219,10 @@ $(function () {
         if (isDeleting) return;
 
         var memberId = selectedMemberId;
-        if (!memberId) return;
+        if (!memberId) {
+            showToast('ID anggota tidak valid.', 'destructive');
+            return;
+        }
 
         isDeleting = true;
         $confirmDeleteBtn.prop('disabled', true).text('Menghapus...');
@@ -222,10 +237,11 @@ $(function () {
                     selectedMemberId = 0;
                     closeDeleteModal();
                     loadMembers(currentPage);
+                    showToast((res && res.message) ? res.message : 'Data anggota berhasil dihapus.', 'success');
                     return;
                 }
 
-                alert((res && res.message) ? res.message : 'Gagal menghapus anggota.');
+                showToast((res && res.message) ? res.message : 'Gagal menghapus anggota.', 'destructive');
             },
             error: function (xhr) {
                 var message = 'Gagal menghapus anggota.';
@@ -234,7 +250,7 @@ $(function () {
                     message = xhr.responseJSON.message;
                 }
 
-                alert(message);
+                showToast(message, 'destructive');
             },
             complete: function () {
                 isDeleting = false;
