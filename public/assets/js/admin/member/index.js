@@ -12,8 +12,8 @@ $(function () {
     var currentPage = 1;
     var lastPage    = 1;
     var perPage     = 10;
-    var sortField   = 'name';
-    var sortDir     = 'asc';
+    var sortField   = 'id';
+    var sortDir     = 'desc';
     var isDeleting  = false;
 
     function closeDeleteModal() {
@@ -67,6 +67,10 @@ $(function () {
         }
 
         $.each(members, function (_, member) {
+            var avatarSrc = member.avatar
+                ? '/member/avatar?file=' + encodeURIComponent(member.avatar)
+                : '/themes/metronic/dist/assets/media/avatars/blank.png';
+
             var statusBadge = member.status === 'active'
                 ? '<span class="kt-badge kt-badge-success kt-badge-outline">Aktif</span>'
                 : '<span class="kt-badge kt-badge-destructive kt-badge-outline">Tidak Aktif</span>';
@@ -80,7 +84,7 @@ $(function () {
                     '<td>' +
                         '<div class="flex items-center gap-2.5">' +
                             '<div>' +
-                                '<img class="h-9 rounded-full" src="/themes/metronic/dist/assets/media/avatars/blank.png" style="min-width:36px"/>' +
+                                '<img class="h-9 rounded-full" src="' + avatarSrc + '" style="min-width:36px"/>' +
                             '</div>' +
                             '<div class="flex flex-col gap-0.5">' +
                                 '<span class="leading-none font-medium text-sm text-mono">' +
