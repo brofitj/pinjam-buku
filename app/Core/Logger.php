@@ -42,6 +42,9 @@ class Logger
 
         $log = "[$date][$level] $message $contextString" . PHP_EOL;
 
-        file_put_contents(self::$logFile, $log, FILE_APPEND);
+        $written = @file_put_contents(self::$logFile, $log, FILE_APPEND);
+        if ($written === false) {
+            error_log('[LOGGER_WRITE_FAILED] ' . $log);
+        }
     }
 }

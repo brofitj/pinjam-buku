@@ -57,6 +57,13 @@ class AuthController
                     header("Location: /login");
                     exit;
 
+                } elseif ((int)$user['role_id'] === 3 && empty($user['email_verified_at'])) {
+
+                    $_SESSION['login_error'] = "Akun anggota belum terverifikasi. Silakan cek email Anda.";
+                    $_SESSION['old_email'] = $email;
+                    header("Location: /login");
+                    exit;
+
                 } else {
 
                     session_regenerate_id(true);

@@ -44,17 +44,6 @@
                         Anggota
                     </span>
                 </div>
-                <ul class="kt-dropdown-menu-sub">
-                    <li>
-                        <div class="kt-dropdown-menu-separator"></div>
-                    </li>
-                    <li>
-                        <a class="kt-dropdown-menu-link" href="#">
-                            <i class="ki-filled ki-profile-circle"></i>
-                            My Profile
-                        </a>
-                    </li>
-                </ul>
                 <div class="kt-dropdown-menu-separator"></div>
                 <div class="px-2.5 pt-1.5 mb-2.5 flex flex-col gap-3.5">
                     <div class="flex items-center gap-2 justify-between">

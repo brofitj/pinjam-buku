@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Core\Database;
+use App\Core\Logger;
+use App\Services\MailService;
 
 class MemberController
 {
@@ -225,31 +227,124 @@ class MemberController
             $username .= rand(100, 999);
         }
 
-        $insertStmt = $db->prepare(
-            "INSERT INTO tbr_users
-                (name, avatar, gender, phone, address, join_date, role_id, email, username, password, status, created_at, updated_at)
-             VALUES
-                (:name, :avatar, :gender, :phone, :address, :join_date, :role_id, :email, :username, :password, :status, NOW(), NOW())"
-        );
+        $db->beginTransaction();
+        try {
+            $insertStmt = $db->prepare(
+                "INSERT INTO tbr_users
+                    (name, avatar, gender, phone, address, join_date, role_id, email, email_verified_at, username, password, status, created_at, updated_at)
+                 VALUES
+                    (:name, :avatar, :gender, :phone, :address, :join_date, :role_id, :email, NULL, :username, :password, :status, NOW(), NOW())"
+            );
 
-        $insertStmt->execute([
-            ':name'      => $name,
-            ':avatar'    => $avatarFileName,
-            ':gender'    => $gender,
-            ':phone'     => $phone !== '' ? $phone : null,
-            ':address'   => $address !== '' ? $address : null,
-            ':join_date' => date('Y-m-d'),
-            ':role_id'   => (int)$memberRole['id'],
-            ':email'     => $email,
-            ':username'  => $username,
-            ':password'  => password_hash($password, PASSWORD_BCRYPT),
-            ':status'    => $status,
+            $insertStmt->execute([
+                ':name'      => $name,
+                ':avatar'    => $avatarFileName,
+                ':gender'    => $gender,
+                ':phone'     => $phone !== '' ? $phone : null,
+                ':address'   => $address !== '' ? $address : null,
+                ':join_date' => date('Y-m-d'),
+                ':role_id'   => (int)$memberRole['id'],
+                ':email'     => $email,
+                ':username'  => $username,
+                ':password'  => password_hash($password, PASSWORD_BCRYPT),
+                ':status'    => $status,
+            ]);
+
+            $memberId = (int)$db->lastInsertId();
+            $verificationToken = $this->createEmailVerificationToken($db, $memberId);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Gagal menambahkan anggota.']);
+            return;
+        }
+
+        Logger::info('Member created, attempting verification email.', [
+            'email' => $email,
+            'member_id' => $memberId,
         ]);
+
+        $mailSent = $this->sendMemberVerificationEmail($email, $name, $verificationToken);
 
         echo json_encode([
             'success' => true,
-            'message' => 'Data anggota berhasil ditambahkan.',
+            'message' => $mailSent
+                ? 'Data anggota berhasil ditambahkan. Email verifikasi telah dikirim.'
+                : 'Data anggota berhasil ditambahkan, tetapi email verifikasi gagal dikirim.',
+            'mail_sent' => $mailSent,
         ]);
+    }
+
+    /**
+     * Verify member email by token.
+     */
+    public function verifyEmail(): void
+    {
+        $token = trim((string)($_GET['token'] ?? ''));
+        if ($token === '') {
+            http_response_code(400);
+            echo 'Token verifikasi tidak valid.';
+            return;
+        }
+
+        $tokenHash = hash('sha256', $token);
+        $db = Database::getInstance();
+
+        $stmt = $db->prepare(
+            "SELECT ev.id, ev.user_id, ev.expires_at, ev.verified_at, u.email_verified_at
+             FROM tbr_email_verifications ev
+             INNER JOIN tbr_users u ON u.id = ev.user_id
+             INNER JOIN tbr_roles r ON r.id = u.role_id
+             WHERE ev.token_hash = :token_hash
+               AND r.name = 'member'
+             LIMIT 1"
+        );
+        $stmt->execute([':token_hash' => $tokenHash]);
+        $verification = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$verification) {
+            http_response_code(404);
+            echo 'Token verifikasi tidak ditemukan.';
+            return;
+        }
+
+        if (!empty($verification['verified_at']) || !empty($verification['email_verified_at'])) {
+            echo 'Email sudah terverifikasi sebelumnya.';
+            return;
+        }
+
+        $expiresAt = strtotime((string)$verification['expires_at']);
+        if ($expiresAt !== false && $expiresAt < time()) {
+            http_response_code(410);
+            echo 'Token verifikasi sudah kedaluwarsa.';
+            return;
+        }
+
+        $db->beginTransaction();
+        try {
+            $updateUser = $db->prepare('UPDATE tbr_users SET email_verified_at = NOW(), updated_at = NOW() WHERE id = :id LIMIT 1');
+            $updateUser->execute([':id' => (int)$verification['user_id']]);
+
+            $updateVerification = $db->prepare('UPDATE tbr_email_verifications SET verified_at = NOW(), updated_at = NOW() WHERE id = :id LIMIT 1');
+            $updateVerification->execute([':id' => (int)$verification['id']]);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            http_response_code(500);
+            echo 'Terjadi kesalahan saat verifikasi email.';
+            return;
+        }
+
+        echo 'Email berhasil diverifikasi. Silakan login.';
     }
 
     /**
@@ -623,5 +718,60 @@ class MemberController
         }
 
         return $fileName;
+    }
+
+    private function createEmailVerificationToken(\PDO $db, int $userId): string
+    {
+        try {
+            $token = bin2hex(random_bytes(32));
+        } catch (\Throwable $e) {
+            $token = bin2hex((string)time() . (string)mt_rand(1000, 9999));
+        }
+
+        $tokenHash = hash('sha256', $token);
+
+        $cleanupStmt = $db->prepare('DELETE FROM tbr_email_verifications WHERE user_id = :user_id');
+        $cleanupStmt->execute([':user_id' => $userId]);
+
+        $insertStmt = $db->prepare(
+            "INSERT INTO tbr_email_verifications
+                (user_id, token_hash, expires_at, verified_at, created_at, updated_at)
+             VALUES
+                (:user_id, :token_hash, DATE_ADD(NOW(), INTERVAL 24 HOUR), NULL, NOW(), NOW())"
+        );
+        $insertStmt->execute([
+            ':user_id' => $userId,
+            ':token_hash' => $tokenHash,
+        ]);
+
+        return $token;
+    }
+
+    private function sendMemberVerificationEmail(string $email, string $name, string $token): bool
+    {
+        $mailConfig = require dirname(__DIR__, 2) . '/config/mail.php';
+
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $verifyUrl = $scheme . '://' . $host . '/member/verify-email?token=' . rawurlencode($token);
+
+        $subject = 'Verifikasi Akun Anggota';
+        $message = "Halo {$name},\n\nSilakan verifikasi akun Anda dengan membuka tautan berikut:\n{$verifyUrl}\n\nTautan berlaku 24 jam.\n";
+        $mailer = new MailService($mailConfig);
+        $sent = $mailer->send($email, $name, $subject, $message);
+
+        if (!$sent) {
+            Logger::warning('Email verifikasi member gagal dikirim.', [
+                'email' => $email,
+                'verify_url' => $verifyUrl,
+            ]);
+            return false;
+        }
+
+        Logger::info('Email verifikasi member terkirim.', [
+            'email' => $email,
+        ]);
+
+        return true;
     }
 }

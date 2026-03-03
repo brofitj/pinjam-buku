@@ -13,6 +13,7 @@ return [
     '/member' => dirname(__DIR__) . '/app/Views/admin/member/index.php',
     '/member/add' => dirname(__DIR__) . '/app/Views/admin/member/add.php',
     '/member/edit' => dirname(__DIR__) . '/app/Views/admin/member/edit.php',
+    '/member/verify-email' => [MemberController::class, 'verifyEmail'],
     '/user' => dirname(__DIR__) . '/app/Views/admin/user/index.php',
     '/user/add' => dirname(__DIR__) . '/app/Views/admin/user/add.php',
     '/user/edit' => dirname(__DIR__) . '/app/Views/admin/user/edit.php',
