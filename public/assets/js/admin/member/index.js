@@ -70,6 +70,9 @@ $(function () {
             var avatarSrc = member.avatar
                 ? '/member/avatar?file=' + encodeURIComponent(member.avatar)
                 : '/themes/metronic/dist/assets/media/avatars/blank.png';
+            var verificationBadge = member.email_verified_at
+                ? '<span class="kt-badge kt-badge-success kt-badge-outline">Verified</span>'
+                : '<span class="kt-badge kt-badge-destructive kt-badge-outline">Unverified</span>';
 
             var statusBadge = member.status === 'active'
                 ? '<span class="kt-badge kt-badge-success kt-badge-outline">Aktif</span>'
@@ -97,9 +100,14 @@ $(function () {
                         '</div>' +
                     '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + genderLabel + '</td>' +
-                    '<td class="text-sm text-foreground font-normal">+' + (member.phone || '-') + '</td>' +
+                    '<td class="text-sm text-foreground font-normal">' + (member.phone || '-') + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + (member.address || '-') + '</td>' +
-                    '<td>' + statusBadge + '</td>' +
+                    '<td>' +
+                        '<div class="flex items-center gap-1.5 flex-wrap">' +
+                            statusBadge +
+                            verificationBadge +
+                        '</div>' +
+                    '</td>' +
                     '<td>' +
                         '<a class="kt-btn kt-btn-icon kt-btn-ghost" href="/member/edit?id=' + member.id + '">' +
                             '<i class="ki-filled ki-notepad-edit"></i>' +

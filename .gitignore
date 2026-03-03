@@ -1,2 +1,20 @@
 .env
 
+# Logs
+storage/logs/*
+!storage/logs/.gitkeep
+
+# Cache
+storage/cache/*
+!storage/cache/.gitkeep
+
+# Uploaded files
+storage/avatars/*
+storage/avatars/members/*
+storage/avatars/users/*
+!storage/avatars/.gitkeep
+!storage/avatars/members/.gitkeep
+!storage/avatars/users/.gitkeep
+
+# macOS
+.DS_Store

@@ -61,7 +61,7 @@ ob_start();
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[200px]" data-sort-field="gender">
+                                    <th class="w-[150px]" data-sort-field="gender">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">
                                                 Jenis Kelamin
@@ -69,7 +69,7 @@ ob_start();
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[200px]">
+                                    <th class="w-[150px]">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">
                                                 Nomor WA
@@ -83,7 +83,7 @@ ob_start();
                                             </span>
                                         </span>
                                     </th>
-                                    <th class="w-[100px]" data-sort-field="status">
+                                    <th class="w-[150px]" data-sort-field="status">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">
                                                 Status

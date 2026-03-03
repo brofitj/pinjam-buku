@@ -62,4 +62,50 @@ class HeaderController
             'role_badge_class' => $roleBadgeClass,
         ];
     }
+
+    /**
+     * Build member sidebar user data for current authenticated user.
+     *
+     * @param array $sessionUser
+     * @return array
+     */
+    public static function getMemberMenuData(array $sessionUser = []): array
+    {
+        $authUserId = (int)($sessionUser['id'] ?? 0);
+        $memberUser = null;
+
+        if ($authUserId > 0) {
+            try {
+                $db = Database::getInstance();
+                $stmt = $db->prepare(
+                    "SELECT u.name, u.email, u.avatar, u.email_verified_at
+                     FROM tbr_users u
+                     WHERE u.id = :id
+                     LIMIT 1"
+                );
+                $stmt->execute([':id' => $authUserId]);
+                $memberUser = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+            } catch (\Throwable $e) {
+                $memberUser = null;
+            }
+        }
+
+        $displayName = $memberUser['name'] ?? ($sessionUser['name'] ?? 'Member');
+        $displayEmail = $memberUser['email'] ?? '-';
+        $avatarFile = trim((string)($memberUser['avatar'] ?? ''));
+        $isVerified = !empty($memberUser['email_verified_at']);
+
+        $avatarUrl = '/themes/metronic/dist/assets/media/avatars/blank.png';
+        if ($avatarFile !== '' && preg_match('/^[a-zA-Z0-9._-]+$/', $avatarFile) === 1) {
+            $avatarUrl = '/member/avatar?file=' . rawurlencode($avatarFile);
+        }
+
+        return [
+            'name' => $displayName,
+            'email' => $displayEmail,
+            'avatar_url' => $avatarUrl,
+            'verification_label' => $isVerified ? 'Verified' : 'Unverified',
+            'verification_badge_class' => $isVerified ? 'kt-badge-success' : 'kt-badge-destructive',
+        ];
+    }
 }

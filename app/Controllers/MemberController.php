@@ -91,7 +91,7 @@ class MemberController
         $total = (int)$countStmt->fetchColumn();
 
         $dataSql = "
-            SELECT u.id, u.name, u.avatar, u.gender, u.email, u.phone, u.address, u.status
+            SELECT u.id, u.name, u.avatar, u.gender, u.email, u.email_verified_at, u.phone, u.address, u.status
             FROM tbr_users u
             INNER JOIN tbr_roles r ON r.id = u.role_id
             WHERE $where

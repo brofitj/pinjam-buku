@@ -97,7 +97,7 @@ $(function () {
                     '</td>' +
                     '<td>' + roleBadge + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + genderLabel + '</td>' +
-                    '<td class="text-sm text-foreground font-normal">+' + (user.phone || '-') + '</td>' +
+                    '<td class="text-sm text-foreground font-normal">' + (user.phone || '-') + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + (user.address || '-') + '</td>' +
                     '<td>' + statusBadge + '</td>' +
                     '<td>' +

@@ -1,3 +1,13 @@
+<?php
+
+$displayName = $memberMenuData['name'] ?? 'Member';
+$displayEmail = $memberMenuData['email'] ?? '-';
+$avatarUrl = $memberMenuData['avatar_url'] ?? '/themes/metronic/dist/assets/media/avatars/blank.png';
+$verificationLabel = $memberMenuData['verification_label'] ?? 'Unverified';
+$verificationBadgeClass = $memberMenuData['verification_badge_class'] ?? 'kt-badge-destructive';
+
+?>
+
 <div class="fixed top-0 bottom-0 z-20 hidden lg:flex flex-col items-stretch shrink-0 bg-muted [--kt-drawer-enable:true] lg:[--kt-drawer-enable:false]" data-kt-drawer="true" data-kt-drawer-class="kt-drawer kt-drawer-start flex" id="sidebar">
     <div class="hidden lg:flex items-center justify-center shrink-0 pt-8 pb-3.5" id="sidebar_header">
         <a href="#">
@@ -25,24 +35,26 @@
         <!-- User -->
         <div data-kt-dropdown="true" data-kt-dropdown-offset="10px, 10px" data-kt-dropdown-offset-rtl="-20px, 10px" data-kt-dropdown-placement="bottom-start" data-kt-dropdown-placement-rtl="bottom-end" data-kt-dropdown-trigger="click">
             <div class="cursor-pointer shrink-0" data-kt-dropdown-toggle="true">
-                <img alt="" class="size-9 rounded-lg shrink-0" src="/themes/metronic/dist/assets/media/avatars/300-2.png"/>
+                <img alt="" class="size-9 rounded-lg shrink-0" src="<?= htmlspecialchars($avatarUrl) ?>"/>
             </div>
             <div class="kt-dropdown-menu w-[250px]" data-kt-dropdown-menu="true">
                 <div class="flex items-center justify-between px-2.5 py-1.5 gap-1.5">
                     <div class="flex items-center gap-2">
-                        <img alt="" class="size-9 shrink-0 rounded-full border-2 border-green-500" src="/themes/metronic/dist/assets/media/avatars/300-2.png"/>
+                        <img alt="" class="size-9 shrink-0 rounded-full border-2 border-green-500" src="<?= htmlspecialchars($avatarUrl) ?>"/>
                         <div class="flex flex-col gap-1.5">
-                            <span class="text-sm text-foreground font-semibold leading-none">
-                                Cody Fisher
-                            </span>
-                            <a class="text-xs text-secondary-foreground hover:text-primary font-medium leading-none" href="#">
-                                fisher@gmail.com
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-foreground font-semibold leading-none">
+                                    <?= htmlspecialchars($displayName) ?>
+                                </span>
+                                <span class="kt-badge kt-badge-sm <?= htmlspecialchars($verificationBadgeClass) ?> kt-badge-outline">
+                                    <?= htmlspecialchars($verificationLabel) ?>
+                                </span>
+                            </div>
+                            <a class="text-xs text-secondary-foreground hover:text-primary font-medium leading-none" href="mailto:<?= htmlspecialchars($displayEmail) ?>">
+                                <?= htmlspecialchars($displayEmail) ?>
                             </a>
                         </div>
                     </div>
-                    <span class="kt-badge kt-badge-sm kt-badge-primary kt-badge-outline">
-                        Anggota
-                    </span>
                 </div>
                 <div class="kt-dropdown-menu-separator"></div>
                 <div class="px-2.5 pt-1.5 mb-2.5 flex flex-col gap-3.5">
