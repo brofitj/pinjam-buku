@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\AuthController;
+use App\Controllers\BookController;
 use App\Controllers\MemberController;
 use App\Controllers\UserController;
 
@@ -10,6 +11,9 @@ return [
     '/logout' => [AuthController::class, 'logout'],
 
     '/dashboard' => dirname(__DIR__) . '/app/Views/admin/dashboard/index.php',
+    '/book' => dirname(__DIR__) . '/app/Views/admin/book/index.php',
+    '/book/add' => dirname(__DIR__) . '/app/Views/admin/book/add.php',
+    '/book/edit' => dirname(__DIR__) . '/app/Views/admin/book/edit.php',
     '/member' => dirname(__DIR__) . '/app/Views/admin/member/index.php',
     '/member/add' => dirname(__DIR__) . '/app/Views/admin/member/add.php',
     '/member/edit' => dirname(__DIR__) . '/app/Views/admin/member/edit.php',
@@ -28,6 +32,12 @@ return [
     '/api/users/create' => [UserController::class, 'store'],
     '/api/users/update' => [UserController::class, 'update'],
     '/api/users/delete' => [UserController::class, 'delete'],
+    '/api/books' => [BookController::class, 'index'],
+    '/api/books/show' => [BookController::class, 'show'],
+    '/api/books/create' => [BookController::class, 'store'],
+    '/api/books/update' => [BookController::class, 'update'],
+    '/api/books/delete' => [BookController::class, 'delete'],
+    '/book/cover' => [BookController::class, 'cover'],
     '/user/avatar' => [UserController::class, 'avatar'],
     '/member/avatar' => [MemberController::class, 'avatar'],
     

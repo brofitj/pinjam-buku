@@ -12,9 +12,13 @@ storage/cache/*
 storage/avatars/*
 storage/avatars/members/*
 storage/avatars/users/*
+storage/covers/*
+storage/covers/books/*
 !storage/avatars/.gitkeep
 !storage/avatars/members/.gitkeep
 !storage/avatars/users/.gitkeep
+!storage/covers/.gitkeep
+!storage/covers/books/.gitkeep
 
 # macOS
 .DS_Store

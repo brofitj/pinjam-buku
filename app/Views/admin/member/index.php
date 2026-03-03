@@ -20,9 +20,6 @@ ob_start();
             <h1 class="text-xl font-medium leading-none text-mono">
                 Anggota
             </h1>
-            <div class="flex items-center gap-2 text-sm font-normal text-secondary-foreground">
-                Central hub for personal customization.
-            </div>
         </div>
         <div class="flex items-center gap-2.5">
             <a class="kt-btn kt-btn-outline" href="/member/add">

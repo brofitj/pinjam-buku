@@ -6,7 +6,7 @@ if (!isset($_SESSION['user'])) {
 }
 
 $breadcrumbs = [
-    ['label' => 'Pengelola', 'url' => '/user'],
+    ['label' => 'Buku', 'url' => '/book'],
     ['label' => 'Semua'],
 ];
 
@@ -18,13 +18,13 @@ ob_start();
     <div class="flex flex-wrap items-center lg:items-end justify-between gap-5 pb-7.5">
         <div class="flex flex-col justify-center gap-2">
             <h1 class="text-xl font-medium leading-none text-mono">
-                Pengelola
+                Buku
             </h1>
         </div>
         <div class="flex items-center gap-2.5">
-            <a class="kt-btn kt-btn-outline" href="/user/add">
+            <a class="kt-btn kt-btn-outline" href="/book/add">
                 <i class="ki-filled ki-plus"></i>
-                Pengelola
+                Buku
             </a>
         </div>
     </div>
@@ -35,67 +35,78 @@ ob_start();
         <div class="kt-card kt-card-grid min-w-full">
             <div class="kt-card-header flex-wrap py-5">
                 <h3 class="kt-card-title">
-                    <span id="user_count">0</span> Pengelola
+                    <span id="book_count">0</span> Buku
                 </h3>
                 <div class="flex items-center gap-6">
                     <label class="kt-input">
                         <i class="ki-filled ki-magnifier"></i>
-                        <input id="user_search" placeholder="Cari pengelola" type="text" value=""/>
+                        <input id="book_search" placeholder="Cari kode judul penulis penerbit ISBN" type="text" value=""/>
                     </label>
                 </div>
             </div>
             <div class="kt-card-content">
-                <div id="user_table_wrapper">
+                <div id="book_table_wrapper">
                     <div class="kt-scrollable-x-auto">
                         <table class="kt-table table-fixed kt-table-border">
                             <thead>
                                 <tr>
-                                    <th class="w-[250px]" data-sort-field="name">
+                                    <th class="w-[120px]" data-sort-field="book_code">
                                         <span class="kt-table-col">
-                                            <span class="kt-table-col-label">Nama</span>
+                                            <span class="kt-table-col-label">Kode</span>
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[150px]" data-sort-field="role">
+                                    <th class="w-[90px]">
                                         <span class="kt-table-col">
-                                            <span class="kt-table-col-label">Role</span>
+                                            <span class="kt-table-col-label">Cover</span>
+                                        </span>
+                                    </th>
+                                    <th class="w-[240px]" data-sort-field="title">
+                                        <span class="kt-table-col">
+                                            <span class="kt-table-col-label">Judul</span>
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[150px]" data-sort-field="gender">
+                                    <th class="w-[120px]" data-sort-field="stock">
                                         <span class="kt-table-col">
-                                            <span class="kt-table-col-label">Jenis Kelamin</span>
+                                            <span class="kt-table-col-label">Stok</span>
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[150px]">
+                                    <th class="w-[180px]" data-sort-field="author">
                                         <span class="kt-table-col">
-                                            <span class="kt-table-col-label">Nomor WA</span>
-                                        </span>
-                                    </th>
-                                    <th class="w-[200px]">
-                                        <span class="kt-table-col">
-                                            <span class="kt-table-col-label">Alamat</span>
-                                        </span>
-                                    </th>
-                                    <th class="w-[100px]" data-sort-field="status">
-                                        <span class="kt-table-col">
-                                            <span class="kt-table-col-label">Status</span>
+                                            <span class="kt-table-col-label">Penulis</span>
                                             <span class="kt-table-col-sort"></span>
+                                        </span>
+                                    </th>
+                                    <th class="w-[180px]">
+                                        <span class="kt-table-col">
+                                            <span class="kt-table-col-label">Penerbit</span>
+                                        </span>
+                                    </th>
+                                    <th class="w-[100px]" data-sort-field="publication_year">
+                                        <span class="kt-table-col">
+                                            <span class="kt-table-col-label">Tahun</span>
+                                            <span class="kt-table-col-sort"></span>
+                                        </span>
+                                    </th>
+                                    <th class="w-[180px]">
+                                        <span class="kt-table-col">
+                                            <span class="kt-table-col-label">ISBN</span>
                                         </span>
                                     </th>
                                     <th class="w-[60px]"></th>
                                     <th class="w-[60px]"></th>
                                 </tr>
                             </thead>
-                            <tbody id="user_table_body"></tbody>
+                            <tbody id="book_table_body"></tbody>
                         </table>
                     </div>
                     <div class="kt-card-footer justify-end md:justify-end flex-col md:flex-row gap-5 text-secondary-foreground text-sm font-medium">
                         <div class="flex items-center gap-4 order-1 md:order-2">
-                            <button id="user_prev" class="kt-btn kt-btn-sm kt-btn-outline">Prev</button>
-                            <span id="user_page_info">Halaman 1 dari 1</span>
-                            <button id="user_next" class="kt-btn kt-btn-sm kt-btn-outline">Next</button>
+                            <button id="book_prev" class="kt-btn kt-btn-sm kt-btn-outline">Prev</button>
+                            <span id="book_page_info">Halaman 1 dari 1</span>
+                            <button id="book_next" class="kt-btn kt-btn-sm kt-btn-outline">Next</button>
                         </div>
                     </div>
                 </div>
@@ -104,7 +115,7 @@ ob_start();
     </div>
 </div>
 
-<div class="kt-modal" data-kt-modal="true" id="delete_user_modal">
+<div class="kt-modal" data-kt-modal="true" id="delete_book_modal">
     <div class="kt-modal-content max-w-[500px] top-[5%]">
         <div class="kt-modal-header">
             <h3 class="kt-modal-title">Hapus</h3>
@@ -112,7 +123,7 @@ ob_start();
                 type="button"
                 class="kt-modal-close"
                 aria-label="Close modal"
-                data-kt-modal-dismiss="#delete_user_modal"
+                data-kt-modal-dismiss="#delete_book_modal"
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -134,15 +145,15 @@ ob_start();
         </div>
         <div class="kt-modal-body">
             <div class="text-sm text-foreground font-normal">
-                Data pengelola <span id="delete_user_name" class="font-semibold text-mono">-</span>
+                Data buku <span id="delete_book_title" class="font-semibold text-mono">-</span>
                 akan dihapus secara permanen. Apakah Anda yakin ingin melanjutkan?
             </div>
         </div>
         <div class="kt-modal-footer">
             <div></div>
             <div class="flex gap-4">
-                <button class="kt-btn kt-btn-secondary" data-kt-modal-dismiss="#delete_user_modal">Batal</button>
-                <button class="kt-btn kt-btn-destructive" id="confirm_delete_user" type="button">Hapus</button>
+                <button class="kt-btn kt-btn-secondary" data-kt-modal-dismiss="#delete_book_modal">Batal</button>
+                <button class="kt-btn kt-btn-destructive" id="confirm_delete_book" type="button">Hapus</button>
             </div>
         </div>
     </div>
@@ -156,4 +167,4 @@ require __DIR__ . '/../../layouts/admin/app.php';
 
 ?>
 
-<script src="/assets/js/admin/user/index.js"></script>
+<script src="/assets/js/admin/book/index.js"></script>

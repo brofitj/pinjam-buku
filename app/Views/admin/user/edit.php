@@ -20,9 +20,6 @@ ob_start();
             <h1 class="text-xl font-medium leading-none text-mono">
                 Ubah Pengelola
             </h1>
-            <div class="flex items-center gap-2 text-sm font-normal text-secondary-foreground">
-                Central hub for personal customization.
-            </div>
         </div>
     </div>
 </div>
