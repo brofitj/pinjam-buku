@@ -4,11 +4,8 @@ namespace App\Controllers;
 
 use App\Core\Database;
 
-class MemberController
+class UserController
 {
-    /**
-     * Ensure authenticated user session exists.
-     */
     private function isAuthenticated(): bool
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -19,10 +16,7 @@ class MemberController
     }
 
     /**
-     * Return list of members as JSON.
-     *
-     * @return void
-     * @throws \Exception
+     * Return list of users (superadmin + librarian) as JSON.
      */
     public function index(): void
     {
@@ -40,32 +34,35 @@ class MemberController
         $offset  = ($page - 1) * $perPage;
 
         $q = trim($_GET['q'] ?? '');
-        $where  = "r.name = 'member'";
+        $where = "r.name IN ('superadmin', 'librarian')";
         $params = [];
 
         if ($q !== '') {
             $where .= " AND (
-                u.name   LIKE :q_name
+                u.name LIKE :q_name
                 OR u.email LIKE :q_email
                 OR u.phone LIKE :q_phone
                 OR u.address LIKE :q_address
+                OR r.name LIKE :q_role
             )";
 
             $like = '%' . $q . '%';
-            $params[':q_name']    = $like;
-            $params[':q_email']   = $like;
-            $params[':q_phone']   = $like;
+            $params[':q_name'] = $like;
+            $params[':q_email'] = $like;
+            $params[':q_phone'] = $like;
             $params[':q_address'] = $like;
+            $params[':q_role'] = $like;
         }
 
         $allowedSort = [
-            'id'     => 'u.id',
-            'name'   => 'u.name',
+            'id' => 'u.id',
+            'name' => 'u.name',
             'gender' => 'u.gender',
             'status' => 'u.status',
+            'role' => 'r.name',
         ];
 
-        $sortBy  = $_GET['sort_by'] ?? 'id';
+        $sortBy = $_GET['sort_by'] ?? 'id';
         $sortDir = strtolower($_GET['sort_dir'] ?? 'desc');
 
         if (!isset($allowedSort[$sortBy])) {
@@ -89,7 +86,7 @@ class MemberController
         $total = (int)$countStmt->fetchColumn();
 
         $dataSql = "
-            SELECT u.id, u.name, u.avatar, u.gender, u.email, u.phone, u.address, u.status
+            SELECT u.id, u.name, u.avatar, u.gender, u.email, u.phone, u.address, u.status, r.name AS role
             FROM tbr_users u
             INNER JOIN tbr_roles r ON r.id = u.role_id
             WHERE $where
@@ -104,22 +101,22 @@ class MemberController
         $dataStmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
         $dataStmt->execute();
 
-        $members = $dataStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $users = $dataStmt->fetchAll(\PDO::FETCH_ASSOC);
 
         header('Content-Type: application/json');
         echo json_encode([
-            'data' => $members,
+            'data' => $users,
             'meta' => [
-                'total'     => $total,
-                'page'      => $page,
-                'per_page'  => $perPage,
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
                 'last_page' => max(1, (int)ceil($total / $perPage)),
             ],
         ]);
     }
 
     /**
-     * Create member via AJAX.
+     * Create user (default role: librarian) via AJAX.
      */
     public function store(): void
     {
@@ -144,6 +141,7 @@ class MemberController
         $email    = trim($_POST['email'] ?? '');
         $password = (string)($_POST['password'] ?? '');
         $status   = trim($_POST['status'] ?? '');
+        $role     = 'librarian';
 
         if ($name === '' || $email === '' || $password === '') {
             http_response_code(422);
@@ -162,10 +160,7 @@ class MemberController
 
         if (strlen($password) < 6) {
             http_response_code(422);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Password minimal 6 karakter.',
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Password minimal 6 karakter.']);
             return;
         }
 
@@ -196,13 +191,12 @@ class MemberController
 
         $db = Database::getInstance();
 
-        $memberRoleStmt = $db->prepare("SELECT id FROM tbr_roles WHERE name = 'member' LIMIT 1");
-        $memberRoleStmt->execute();
-        $memberRole = $memberRoleStmt->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$memberRole) {
+        $roleStmt = $db->prepare("SELECT id FROM tbr_roles WHERE name = :name LIMIT 1");
+        $roleStmt->execute([':name' => $role]);
+        $roleData = $roleStmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$roleData) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Role member tidak ditemukan.']);
+            echo json_encode(['success' => false, 'message' => 'Role tidak ditemukan.']);
             return;
         }
 
@@ -216,7 +210,7 @@ class MemberController
 
         $username = strtolower(trim((string)preg_replace('/[^a-zA-Z0-9]+/', '', strstr($email, '@', true) ?: $name)));
         if ($username === '') {
-            $username = 'member' . time();
+            $username = 'user' . time();
         }
 
         $usernameCheckStmt = $db->prepare('SELECT id FROM tbr_users WHERE username = :username LIMIT 1');
@@ -239,7 +233,7 @@ class MemberController
             ':phone'     => $phone !== '' ? $phone : null,
             ':address'   => $address !== '' ? $address : null,
             ':join_date' => date('Y-m-d'),
-            ':role_id'   => (int)$memberRole['id'],
+            ':role_id'   => (int)$roleData['id'],
             ':email'     => $email,
             ':username'  => $username,
             ':password'  => password_hash($password, PASSWORD_BCRYPT),
@@ -248,12 +242,12 @@ class MemberController
 
         echo json_encode([
             'success' => true,
-            'message' => 'Data anggota berhasil ditambahkan.',
+            'message' => 'Data pengelola berhasil ditambahkan.',
         ]);
     }
 
     /**
-     * Get member detail by id.
+     * Get user detail (superadmin/librarian) by id.
      */
     public function show(): void
     {
@@ -265,38 +259,38 @@ class MemberController
             return;
         }
 
-        $memberId = (int)($_GET['id'] ?? 0);
-        if ($memberId <= 0) {
+        $userId = (int)($_GET['id'] ?? 0);
+        if ($userId <= 0) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'ID anggota tidak valid.']);
+            echo json_encode(['success' => false, 'message' => 'ID pengelola tidak valid.']);
             return;
         }
 
         $db = Database::getInstance();
         $stmt = $db->prepare(
-            "SELECT u.id, u.name, u.avatar, u.gender, u.phone, u.address, u.email, u.status
+            "SELECT u.id, u.name, u.avatar, u.gender, u.phone, u.address, u.email, u.status, r.name AS role
              FROM tbr_users u
              INNER JOIN tbr_roles r ON r.id = u.role_id
-             WHERE u.id = :id AND r.name = 'member'
+             WHERE u.id = :id AND r.name IN ('superadmin', 'librarian')
              LIMIT 1"
         );
-        $stmt->execute([':id' => $memberId]);
-        $member = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $stmt->execute([':id' => $userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$member) {
+        if (!$user) {
             http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Data anggota tidak ditemukan.']);
+            echo json_encode(['success' => false, 'message' => 'Data pengelola tidak ditemukan.']);
             return;
         }
 
         echo json_encode([
             'success' => true,
-            'data' => $member,
+            'data' => $user,
         ]);
     }
 
     /**
-     * Update member by id.
+     * Update user (superadmin/librarian) by id.
      */
     public function update(): void
     {
@@ -314,19 +308,19 @@ class MemberController
             return;
         }
 
-        $memberId  = (int)($_POST['id'] ?? 0);
-        $name      = trim($_POST['name'] ?? '');
-        $gender    = trim($_POST['gender'] ?? '');
-        $phone     = trim($_POST['phone'] ?? '');
-        $address   = trim($_POST['address'] ?? '');
-        $email     = trim($_POST['email'] ?? '');
-        $password  = (string)($_POST['password'] ?? '');
-        $status    = trim($_POST['status'] ?? '');
+        $userId   = (int)($_POST['id'] ?? 0);
+        $name     = trim($_POST['name'] ?? '');
+        $gender   = trim($_POST['gender'] ?? '');
+        $phone    = trim($_POST['phone'] ?? '');
+        $address  = trim($_POST['address'] ?? '');
+        $email    = trim($_POST['email'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
+        $status   = trim($_POST['status'] ?? '');
         $removeAvatar = in_array((string)($_POST['avatar_remove'] ?? ''), ['1', 'true', 'on'], true);
 
-        if ($memberId <= 0) {
+        if ($userId <= 0) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'ID anggota tidak valid.']);
+            echo json_encode(['success' => false, 'message' => 'ID pengelola tidak valid.']);
             return;
         }
 
@@ -361,27 +355,26 @@ class MemberController
         }
 
         $db = Database::getInstance();
-
-        $memberStmt = $db->prepare(
-            "SELECT u.id, u.avatar
+        $stmt = $db->prepare(
+            "SELECT u.id, u.avatar, r.name AS role
              FROM tbr_users u
              INNER JOIN tbr_roles r ON r.id = u.role_id
-             WHERE u.id = :id AND r.name = 'member'
+             WHERE u.id = :id AND r.name IN ('superadmin', 'librarian')
              LIMIT 1"
         );
-        $memberStmt->execute([':id' => $memberId]);
-        $member = $memberStmt->fetch(\PDO::FETCH_ASSOC);
+        $stmt->execute([':id' => $userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$member) {
+        if (!$user) {
             http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Data anggota tidak ditemukan.']);
+            echo json_encode(['success' => false, 'message' => 'Data pengelola tidak ditemukan.']);
             return;
         }
 
         $emailCheckStmt = $db->prepare('SELECT id FROM tbr_users WHERE email = :email AND id != :id LIMIT 1');
         $emailCheckStmt->execute([
             ':email' => $email,
-            ':id' => $memberId,
+            ':id' => $userId,
         ]);
         if ($emailCheckStmt->fetch(\PDO::FETCH_ASSOC)) {
             http_response_code(422);
@@ -389,7 +382,7 @@ class MemberController
             return;
         }
 
-        $oldAvatar = trim((string)($member['avatar'] ?? ''));
+        $oldAvatar = trim((string)($user['avatar'] ?? ''));
         $newAvatar = $oldAvatar !== '' ? $oldAvatar : null;
         $hasUploadedAvatar = isset($_FILES['avatar']) && (int)($_FILES['avatar']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
 
@@ -425,7 +418,7 @@ class MemberController
             ':address' => $address !== '' ? $address : null,
             ':email' => $email,
             ':status' => $status,
-            ':id' => $memberId,
+            ':id' => $userId,
         ];
 
         if ($password !== '') {
@@ -434,52 +427,28 @@ class MemberController
         }
 
         $sql .= " WHERE id = :id LIMIT 1";
-
         $updateStmt = $db->prepare($sql);
         $updateStmt->execute($params);
 
         if (($hasUploadedAvatar || $removeAvatar) && $oldAvatar !== '' && $oldAvatar !== $newAvatar) {
-            $oldAvatarPath = dirname(__DIR__, 2) . '/storage/avatars/members/' . $oldAvatar;
-            if (is_file($oldAvatarPath)) {
-                @unlink($oldAvatarPath);
+            $oldAvatarPathUsers = dirname(__DIR__, 2) . '/storage/avatars/users/' . $oldAvatar;
+            $oldAvatarPathMembers = dirname(__DIR__, 2) . '/storage/avatars/members/' . $oldAvatar;
+            if (is_file($oldAvatarPathUsers)) {
+                @unlink($oldAvatarPathUsers);
+            }
+            if (is_file($oldAvatarPathMembers)) {
+                @unlink($oldAvatarPathMembers);
             }
         }
 
         echo json_encode([
             'success' => true,
-            'message' => 'Data anggota berhasil diperbarui.',
+            'message' => 'Data pengelola berhasil diperbarui.',
         ]);
     }
 
     /**
-     * Serve member avatar from storage.
-     */
-    public function avatar(): void
-    {
-        if (!$this->isAuthenticated()) {
-            http_response_code(401);
-            return;
-        }
-
-        $file = basename((string)($_GET['file'] ?? ''));
-        if ($file === '' || preg_match('/^[a-zA-Z0-9._-]+$/', $file) !== 1) {
-            http_response_code(404);
-            return;
-        }
-
-        $path = dirname(__DIR__, 2) . '/storage/avatars/members/' . $file;
-        if (!is_file($path)) {
-            http_response_code(404);
-            return;
-        }
-
-        header('Content-Type: image/jpeg');
-        header('Content-Length: ' . (string)filesize($path));
-        readfile($path);
-    }
-
-    /**
-     * Delete member by id via AJAX.
+     * Delete user (superadmin/librarian) by id via AJAX.
      */
     public function delete(): void
     {
@@ -497,44 +466,82 @@ class MemberController
             return;
         }
 
-        $memberId = (int)($_POST['id'] ?? 0);
-
-        if ($memberId <= 0) {
+        $userId = (int)($_POST['id'] ?? 0);
+        if ($userId <= 0) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'ID anggota tidak valid.']);
+            echo json_encode(['success' => false, 'message' => 'ID pengelola tidak valid.']);
             return;
         }
 
         $db = Database::getInstance();
-
-        $memberStmt = $db->prepare(
-            "SELECT u.id, u.avatar
+        $stmt = $db->prepare(
+            "SELECT u.id, u.avatar, r.name AS role
              FROM tbr_users u
              INNER JOIN tbr_roles r ON r.id = u.role_id
-             WHERE u.id = :id AND r.name = 'member'
+             WHERE u.id = :id AND r.name IN ('superadmin', 'librarian')
              LIMIT 1"
         );
-        $memberStmt->execute([':id' => $memberId]);
-        $member = $memberStmt->fetch(\PDO::FETCH_ASSOC);
+        $stmt->execute([':id' => $userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$member) {
+        if (!$user) {
             http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Data anggota tidak ditemukan.']);
+            echo json_encode(['success' => false, 'message' => 'Data pengelola tidak ditemukan.']);
+            return;
+        }
+
+        if (($user['role'] ?? '') === 'superadmin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'User dengan role superadmin tidak dapat dihapus.']);
             return;
         }
 
         $deleteStmt = $db->prepare('DELETE FROM tbr_users WHERE id = :id LIMIT 1');
-        $deleteStmt->execute([':id' => $memberId]);
+        $deleteStmt->execute([':id' => $userId]);
 
-        $avatar = trim((string)($member['avatar'] ?? ''));
+        $avatar = trim((string)($user['avatar'] ?? ''));
         if ($avatar !== '' && preg_match('/^[a-zA-Z0-9._-]+$/', $avatar) === 1) {
-            $avatarPath = dirname(__DIR__, 2) . '/storage/avatars/members/' . $avatar;
-            if (is_file($avatarPath)) {
-                @unlink($avatarPath);
+            $avatarPathUsers = dirname(__DIR__, 2) . '/storage/avatars/users/' . $avatar;
+            $avatarPathMembers = dirname(__DIR__, 2) . '/storage/avatars/members/' . $avatar;
+            if (is_file($avatarPathUsers)) {
+                @unlink($avatarPathUsers);
+            }
+            if (is_file($avatarPathMembers)) {
+                @unlink($avatarPathMembers);
             }
         }
 
-        echo json_encode(['success' => true, 'message' => 'Data anggota berhasil dihapus.']);
+        echo json_encode(['success' => true, 'message' => 'Data pengelola berhasil dihapus.']);
+    }
+
+    /**
+     * Serve user avatar from storage.
+     */
+    public function avatar(): void
+    {
+        if (!$this->isAuthenticated()) {
+            http_response_code(401);
+            return;
+        }
+
+        $file = basename((string)($_GET['file'] ?? ''));
+        if ($file === '' || preg_match('/^[a-zA-Z0-9._-]+$/', $file) !== 1) {
+            http_response_code(404);
+            return;
+        }
+
+        $pathUsers = dirname(__DIR__, 2) . '/storage/avatars/users/' . $file;
+        $pathMembers = dirname(__DIR__, 2) . '/storage/avatars/members/' . $file;
+
+        $path = is_file($pathUsers) ? $pathUsers : (is_file($pathMembers) ? $pathMembers : null);
+        if ($path === null) {
+            http_response_code(404);
+            return;
+        }
+
+        header('Content-Type: image/jpeg');
+        header('Content-Length: ' . (string)filesize($path));
+        readfile($path);
     }
 
     private function processAvatarUpload(array $file): ?string
@@ -597,7 +604,7 @@ class MemberController
         imagefill($target, 0, 0, $white);
         imagecopyresampled($target, $source, 0, 0, $srcX, $srcY, $targetSize, $targetSize, $side, $side);
 
-        $dir = dirname(__DIR__, 2) . '/storage/avatars/members';
+        $dir = dirname(__DIR__, 2) . '/storage/avatars/users';
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
@@ -612,7 +619,7 @@ class MemberController
             $rand = (string)mt_rand(1000, 9999);
         }
 
-        $fileName = 'member_' . date('YmdHis') . '_' . $rand . '.jpg';
+        $fileName = 'user_' . date('YmdHis') . '_' . $rand . '.jpg';
         $savePath = $dir . '/' . $fileName;
         $saved = imagejpeg($target, $savePath, 80);
 
