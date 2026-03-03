@@ -4,6 +4,7 @@ use App\Controllers\AuthController;
 use App\Controllers\BookController;
 use App\Controllers\DashboardController;
 use App\Controllers\MemberController;
+use App\Controllers\TransactionController;
 use App\Controllers\UserController;
 
 return [
@@ -12,6 +13,7 @@ return [
     '/logout' => [AuthController::class, 'logout'],
 
     '/dashboard' => dirname(__DIR__) . '/app/Views/admin/dashboard/index.php',
+    '/transaction' => dirname(__DIR__) . '/app/Views/admin/transaction/index.php',
     '/book' => dirname(__DIR__) . '/app/Views/admin/book/index.php',
     '/book/add' => dirname(__DIR__) . '/app/Views/admin/book/add.php',
     '/book/edit' => dirname(__DIR__) . '/app/Views/admin/book/edit.php',
@@ -38,6 +40,7 @@ return [
     '/api/books/create' => [BookController::class, 'store'],
     '/api/books/update' => [BookController::class, 'update'],
     '/api/books/delete' => [BookController::class, 'delete'],
+    '/api/transactions' => [TransactionController::class, 'index'],
     '/api/dashboard/stats' => [DashboardController::class, 'stats'],
     '/book/cover' => [BookController::class, 'cover'],
     '/user/avatar' => [UserController::class, 'avatar'],

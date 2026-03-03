@@ -45,6 +45,30 @@ switch ($command) {
         $files = glob(__DIR__ . '/database/seeders/*.php');
         sort($files);
 
+        // Ensure seeders with dependencies run in deterministic order.
+        $preferredOrder = [
+            'RoleSeeder',
+            'UserSeeder',
+            'BookSeeder',
+            'TransactionSeeder',
+        ];
+        usort($files, function (string $a, string $b) use ($preferredOrder): int {
+            $nameA = pathinfo($a, PATHINFO_FILENAME);
+            $nameB = pathinfo($b, PATHINFO_FILENAME);
+
+            $posA = array_search($nameA, $preferredOrder, true);
+            $posB = array_search($nameB, $preferredOrder, true);
+
+            $rankA = $posA === false ? 999 : $posA;
+            $rankB = $posB === false ? 999 : $posB;
+
+            if ($rankA === $rankB) {
+                return strcmp($nameA, $nameB);
+            }
+
+            return $rankA <=> $rankB;
+        });
+
         foreach ($files as $file) {
 
             require_once $file;
