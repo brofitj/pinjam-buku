@@ -105,6 +105,7 @@ $memberMenuData = HeaderController::getMemberMenuData($_SESSION['user'] ?? []);
         <script src="/themes/metronic/dist/assets/vendors/ktui/ktui.min.js"></script>
         <script src="/themes/metronic/dist/assets/vendors/apexcharts/apexcharts.min.js"></script>
         <script src="/themes/metronic/dist/assets/js/widgets/general.js"></script>
+        <script src="/themes/metronic/dist/assets/vendors/jquery/jquery.min.js"></script>
         <!-- End of Scripts -->
     </body>
 </html>

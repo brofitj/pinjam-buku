@@ -3,6 +3,7 @@
 use App\Controllers\AuthController;
 use App\Controllers\BookController;
 use App\Controllers\DashboardController;
+use App\Controllers\Member\TransactionController as MemberTransactionController;
 use App\Controllers\MemberController;
 use App\Controllers\TransactionController;
 use App\Controllers\UserController;
@@ -41,10 +42,14 @@ return [
     '/api/books/update' => [BookController::class, 'update'],
     '/api/books/delete' => [BookController::class, 'delete'],
     '/api/transactions' => [TransactionController::class, 'index'],
+    '/api/member/transactions' => [MemberTransactionController::class, 'index'],
+    '/api/member/books' => [MemberTransactionController::class, 'books'],
+    '/api/member/transactions/create' => [MemberTransactionController::class, 'store'],
     '/api/dashboard/stats' => [DashboardController::class, 'stats'],
     '/book/cover' => [BookController::class, 'cover'],
     '/user/avatar' => [UserController::class, 'avatar'],
     '/member/avatar' => [MemberController::class, 'avatar'],
     
     '/member/dashboard' => dirname(__DIR__) . '/app/Views/member/dashboard/index.php',
+    '/member/dashboard/create' => dirname(__DIR__) . '/app/Views/member/transaction/create.php',
 ];

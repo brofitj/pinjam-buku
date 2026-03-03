@@ -5,6 +5,15 @@ $displayEmail = $memberMenuData['email'] ?? '-';
 $avatarUrl = $memberMenuData['avatar_url'] ?? '/themes/metronic/dist/assets/media/avatars/blank.png';
 $verificationLabel = $memberMenuData['verification_label'] ?? 'Unverified';
 $verificationBadgeClass = $memberMenuData['verification_badge_class'] ?? 'kt-badge-destructive';
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+
+$menuItems = [
+    [
+        'href' => '/member/dashboard',
+        'icon' => 'ki-delivery-3',
+        'title' => 'Transaksi',
+    ],
+];
 
 ?>
 
@@ -18,16 +27,19 @@ $verificationBadgeClass = $memberMenuData['verification_badge_class'] ?? 'kt-bad
     <div class="kt-scrollable-y-hover grow gap-2.5 shrink-0 flex items-center pt-5 lg:pt-0 ps-3 pe-3 lg:pe-0 flex-col" data-kt-scrollable="true" data-kt-scrollable-dependencies="#sidebar_header,#sidebar_footer" data-kt-scrollable-height="auto" data-kt-scrollable-offset="80px" data-kt-scrollable-wrappers="#sidebar_menu_wrapper" id="sidebar_menu_wrapper">
         <!-- Sidebar Menu -->
         <div class="kt-menu flex flex-col gap-2.5 grow" data-kt-menu="true" id="sidebar_menu">
-            <div class="kt-menu-item">
-                <a class="kt-menu-link rounded-[9px] border border-transparent kt-menu-item-active:border-border kt-menu-item-active:bg-background kt-menu-link-hover:bg-background kt-menu-link-hover:border-border w-[62px] h-[60px] flex flex-col justify-center items-center gap-1 p-2" href="#">
-                    <span class="kt-menu-icon kt-menu-item-here:text-primary kt-menu-item-active:text-primary kt-menu-link-hover:text-primary text-secondary-foreground">
-                        <i class="ki-filled ki-chart-line-star text-xl"></i>
-                    </span>
-                    <span class="kt-menu-title text-xs kt-menu-item-here:text-primary kt-menu-item-active:text-primary kt-menu-link-hover:text-primary text-secondary-foreground font-medium">
-                        Boards
-                    </span>
-                </a>
-            </div>
+            <?php foreach ($menuItems as $item): ?>
+                <?php
+                $isActive = (bool)preg_match('#^' . preg_quote($item['href'], '#') . '(/|$)#', $currentPath);
+                $activeClass = $isActive ? 'active' : '';
+                ?>
+                <div class="kt-menu-item <?= $activeClass ?>">
+                    <a class="kt-menu-link rounded-[9px] border border-transparent kt-menu-item-active:border-border kt-menu-item-active:bg-background kt-menu-link-hover:bg-background kt-menu-link-hover:border-border w-[62px] h-[60px] flex flex-col justify-center items-center gap-1 p-2" href="<?= htmlspecialchars($item['href']) ?>">
+                        <span class="kt-menu-icon kt-menu-item-here:text-primary kt-menu-item-active:text-primary kt-menu-link-hover:text-primary text-secondary-foreground">
+                            <i class="ki-filled <?= htmlspecialchars($item['icon']) ?> text-2xl"></i>
+                        </span>
+                    </a>
+                </div>
+            <?php endforeach; ?>
         </div>
         <!-- End of Sidebar Menu -->
     </div>

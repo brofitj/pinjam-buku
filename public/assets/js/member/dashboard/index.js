@@ -1,10 +1,10 @@
 $(function () {
-    var $tbody = $('#transaction_table_body');
-    var $countSpan = $('#transaction_count');
-    var $search = $('#transaction_search');
-    var $pageInfo = $('#transaction_page_info');
-    var $prevBtn = $('#transaction_prev');
-    var $nextBtn = $('#transaction_next');
+    var $tbody = $('#member_transaction_table_body');
+    var $countSpan = $('#member_transaction_count');
+    var $search = $('#member_transaction_search');
+    var $pageInfo = $('#member_transaction_page_info');
+    var $prevBtn = $('#member_transaction_prev');
+    var $nextBtn = $('#member_transaction_next');
 
     var currentPage = 1;
     var lastPage = 1;
@@ -57,7 +57,7 @@ $(function () {
         if (!items.length) {
             $tbody.append(
                 '<tr>' +
-                    '<td colspan="8" class="text-center py-6 text-sm text-secondary-foreground">' +
+                    '<td colspan="7" class="text-center py-6 text-sm text-secondary-foreground">' +
                         'Belum ada data transaksi.' +
                     '</td>' +
                 '</tr>'
@@ -69,7 +69,6 @@ $(function () {
             var rowHtml =
                 '<tr>' +
                     '<td class="text-sm text-foreground font-medium">' + escapeHtml(item.transaction_code || '-') + '</td>' +
-                    '<td class="text-sm text-foreground font-normal">' + escapeHtml(item.member_name || '-') + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + formatDate(item.borrow_date) + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + formatDate(item.due_date) + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + formatDate(item.return_date) + '</td>' +
@@ -86,7 +85,7 @@ $(function () {
         currentPage = page || 1;
 
         $.ajax({
-            url: '/api/transactions',
+            url: '/api/member/transactions',
             method: 'GET',
             dataType: 'json',
             data: {
@@ -119,7 +118,7 @@ $(function () {
                 if ($tbody.length) {
                     $tbody.html(
                         '<tr>' +
-                            '<td colspan="8" class="text-center py-6 text-sm text-destructive">' +
+                            '<td colspan="7" class="text-center py-6 text-sm text-destructive">' +
                                 'Terjadi kesalahan saat memuat data transaksi.' +
                             '</td>' +
                         '</tr>'
