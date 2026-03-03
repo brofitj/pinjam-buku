@@ -34,12 +34,13 @@ class UserSeeder
 
         $stmt = $db->prepare("
             INSERT INTO tbr_users
-                (name, avatar, gender, phone, address, join_date, role_id, email, username, password, status, created_at, updated_at)
+                (name, avatar, gender, phone, address, join_date, role_id, email, email_verified_at, username, password, status, created_at, updated_at)
             VALUES
-                (:name, :avatar, :gender, :phone, :address, :join_date, :role_id, :email, :username, :password, :status, NOW(), NOW())
+                (:name, :avatar, :gender, :phone, :address, :join_date, :role_id, :email, :email_verified_at, :username, :password, :status, NOW(), NOW())
         ");
 
         $today = date('Y-m-d');
+        $emailVerifiedAt = date('Y-m-d H:i:s');
 
         $users = [
             [
@@ -51,6 +52,7 @@ class UserSeeder
                 'join_date' => $today,
                 'role_id'   => $superadminRole['id'],
                 'email'     => 'superadmin@mail.com',
+                'email_verified_at' => $emailVerifiedAt,
                 'username'  => 'superadmin',
                 'password'  => password_hash('superadmin123', PASSWORD_BCRYPT),
                 'status'    => 'active',
@@ -64,6 +66,7 @@ class UserSeeder
                 'join_date' => $today,
                 'role_id'   => $librarianRole['id'],
                 'email'     => 'librarian@mail.com',
+                'email_verified_at' => $emailVerifiedAt,
                 'username'  => 'librarian',
                 'password'  => password_hash('librarian123', PASSWORD_BCRYPT),
                 'status'    => 'active',
@@ -77,6 +80,7 @@ class UserSeeder
                 'join_date' => $today,
                 'role_id'   => $memberRole['id'],
                 'email'     => 'john@mail.com',
+                'email_verified_at' => $emailVerifiedAt,
                 'username'  => 'john',
                 'password'  => password_hash('member123', PASSWORD_BCRYPT),
                 'status'    => 'active',
@@ -90,6 +94,7 @@ class UserSeeder
                 'join_date' => $today,
                 'role_id'   => $memberRole['id'],
                 'email'     => 'susan@mail.com',
+                'email_verified_at' => $emailVerifiedAt,
                 'username'  => 'susan',
                 'password'  => password_hash('member123', PASSWORD_BCRYPT),
                 'status'    => 'inactive',
@@ -106,6 +111,7 @@ class UserSeeder
                 'join_date' => $today,
                 'role_id'   => $memberRole['id'],
                 'email'     => 'member' . $i . '@mail.com',
+                'email_verified_at' => $emailVerifiedAt,
                 'username'  => 'member' . $i,
                 'password'  => password_hash('member123', PASSWORD_BCRYPT),
                 'status'    => 'active',
@@ -122,6 +128,7 @@ class UserSeeder
                 ':join_date' => $user['join_date'],
                 ':role_id'   => $user['role_id'],
                 ':email'     => $user['email'],
+                ':email_verified_at' => $user['email_verified_at'],
                 ':username'  => $user['username'],
                 ':password'  => $user['password'],
                 ':status'    => $user['status'],

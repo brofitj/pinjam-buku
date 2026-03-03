@@ -1,3 +1,11 @@
+<?php
+
+use App\Controllers\HeaderController;
+
+$headerData = HeaderController::getAdminHeaderData($_SESSION['user'] ?? []);
+
+?>
+
 <!DOCTYPE html>
 <html class="h-full" data-kt-theme="true" data-kt-theme-mode="system" dir="ltr" lang="en">
     <head>

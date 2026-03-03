@@ -20,6 +20,7 @@ class CreateUsersTable
 
                 role_id BIGINT UNSIGNED NOT NULL,
                 email VARCHAR(150) NULL,
+                email_verified_at TIMESTAMP NULL,
                 username VARCHAR(100) NULL,
                 password VARCHAR(255) NULL,
                 status enum('active', 'inactive') NULL,          

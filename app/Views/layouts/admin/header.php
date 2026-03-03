@@ -1,10 +1,20 @@
+<?php
+
+$displayName    = $headerData['name'] ?? 'User';
+$displayEmail   = $headerData['email'] ?? '-';
+$avatarUrl      = $headerData['avatar_url'] ?? '/themes/metronic/dist/assets/media/avatars/blank.png';
+$roleLabel      = $headerData['role_label'] ?? '-';
+$roleBadgeClass = $headerData['role_badge_class'] ?? 'kt-badge-secondary';
+
+?>
+
 <header class="kt-header fixed top-0 z-10 start-0 end-0 flex items-stretch shrink-0 bg-background" data-kt-sticky="true" data-kt-sticky-class="border-b border-border" data-kt-sticky-name="header" id="header">
     <!-- Container -->
     <div class="kt-container-fixed flex justify-between items-stretch lg:gap-4" id="headerContainer">
         <!-- Mobile Logo -->
         <div class="flex gap-2.5 lg:hidden items-center -ms-1">
             <a class="shrink-0" href="#">
-                <img class="max-h-[25px] w-full" src="/themes/metronic/dist/assets/media/app/mini-logo.svg"/>
+                <img class="max-h-[25px] w-full" src="/themes/metronic/dist/assets/media/avatars/blank.png"/>
             </a>
             <div class="flex items-center">
                 <button class="kt-btn kt-btn-icon kt-btn-ghost" data-kt-drawer-toggle="#sidebar">
@@ -42,39 +52,26 @@
             <!-- User -->
             <div class="shrink-0" data-kt-dropdown="true" data-kt-dropdown-offset="10px, 10px" data-kt-dropdown-offset-rtl="-20px, 10px" data-kt-dropdown-placement="bottom-end" data-kt-dropdown-placement-rtl="bottom-start" data-kt-dropdown-trigger="click">
                 <div class="cursor-pointer shrink-0" data-kt-dropdown-toggle="true">
-                    <img alt="" class="size-9 rounded-full border-2 border-green-500 shrink-0" src="/themes/metronic/dist/assets/media/avatars/300-2.png"/>
+                    <img alt="" class="size-9 rounded-full border-2 border-green-500 shrink-0" src="<?= htmlspecialchars($avatarUrl) ?>"/>
                 </div>
                 <div class="kt-dropdown-menu w-[250px]" data-kt-dropdown-menu="true">
-                    <div class="flex items-center justify-between px-2.5 py-1.5 gap-1.5">
+                    <div class="flex items-center justify-between px-2.5 py-1.5 gap-0">
                         <div class="flex items-center gap-2">
-                            <img alt="" class="size-9 shrink-0 rounded-full border-2 border-green-500" src="/themes/metronic/dist/assets/media/avatars/300-2.png"/>
+                            <img alt="" class="size-9 shrink-0 rounded-full border-2 border-green-500" src="<?= htmlspecialchars($avatarUrl) ?>"/>
                             <div class="flex flex-col gap-1.5">
                                 <span class="text-sm text-foreground font-semibold leading-none">
-                                    Cody Fisher
+                                    <?= htmlspecialchars($displayName) ?>
                                 </span>
-                                <a class="text-xs text-secondary-foreground hover:text-primary font-medium leading-none" href="#">
-                                    fisher@gmail.com
+                                <a class="text-xs text-secondary-foreground hover:text-primary font-medium leading-none mb-1" href="mailto:<?= htmlspecialchars($displayEmail) ?>">
+                                    <?= htmlspecialchars($displayEmail) ?>
                                 </a>
+                                <span class="kt-badge kt-badge-sm <?= htmlspecialchars($roleBadgeClass) ?> kt-badge-outline">
+                                    <?= htmlspecialchars($roleLabel) ?>
+                                </span>
                             </div>
                         </div>
-                        <span class="kt-badge kt-badge-sm kt-badge-primary kt-badge-outline">
-                            Superadmin
-                        </span>
                     </div>
-                    <ul class="kt-dropdown-menu-sub">
-                        <li>
-                            <div class="kt-dropdown-menu-separator"></div>
-                        </li>
-                        <li>
-                            <a class="kt-dropdown-menu-link" href="#">
-                                <i class="ki-filled ki-profile-circle"></i>
-                                My Profile
-                            </a>
-                        </li>
-                        <li>
-                            <div class="kt-dropdown-menu-separator"></div>
-                        </li>
-                    </ul>
+                    <div class="kt-dropdown-menu-separator"></div>
                     <div class="px-2.5 pt-1.5 mb-2.5 flex flex-col gap-3.5">
                         <div class="flex items-center gap-2 justify-between">
                             <span class="flex items-center gap-2">
