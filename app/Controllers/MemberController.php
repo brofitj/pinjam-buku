@@ -257,6 +257,205 @@ class MemberController
     }
 
     /**
+     * Get member detail by id.
+     */
+    public function show(): void
+    {
+        header('Content-Type: application/json');
+
+        if (!$this->isAuthenticated()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthenticated']);
+            return;
+        }
+
+        $memberId = (int)($_GET['id'] ?? 0);
+        if ($memberId <= 0) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'ID anggota tidak valid.']);
+            return;
+        }
+
+        $db = Database::getInstance();
+        $stmt = $db->prepare(
+            "SELECT u.id, u.name, u.avatar, u.gender, u.phone, u.address, u.email, u.status
+             FROM tbr_users u
+             INNER JOIN tbr_roles r ON r.id = u.role_id
+             WHERE u.id = :id AND r.name = 'member'
+             LIMIT 1"
+        );
+        $stmt->execute([':id' => $memberId]);
+        $member = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$member) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Data anggota tidak ditemukan.']);
+            return;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => $member,
+        ]);
+    }
+
+    /**
+     * Update member by id.
+     */
+    public function update(): void
+    {
+        header('Content-Type: application/json');
+
+        if (!$this->isAuthenticated()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthenticated']);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        $memberId  = (int)($_POST['id'] ?? 0);
+        $name      = trim($_POST['name'] ?? '');
+        $gender    = trim($_POST['gender'] ?? '');
+        $phone     = trim($_POST['phone'] ?? '');
+        $address   = trim($_POST['address'] ?? '');
+        $email     = trim($_POST['email'] ?? '');
+        $password  = (string)($_POST['password'] ?? '');
+        $status    = trim($_POST['status'] ?? '');
+        $removeAvatar = in_array((string)($_POST['avatar_remove'] ?? ''), ['1', 'true', 'on'], true);
+
+        if ($memberId <= 0) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'ID anggota tidak valid.']);
+            return;
+        }
+
+        if ($name === '' || $email === '') {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Nama dan email wajib diisi.']);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Format email tidak valid.']);
+            return;
+        }
+
+        if ($password !== '' && strlen($password) < 6) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Password minimal 6 karakter.']);
+            return;
+        }
+
+        if (!in_array($gender, ['male', 'female'], true)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Gender tidak valid.']);
+            return;
+        }
+
+        if (!in_array($status, ['active', 'inactive'], true)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Status tidak valid.']);
+            return;
+        }
+
+        $db = Database::getInstance();
+
+        $memberStmt = $db->prepare(
+            "SELECT u.id, u.avatar
+             FROM tbr_users u
+             INNER JOIN tbr_roles r ON r.id = u.role_id
+             WHERE u.id = :id AND r.name = 'member'
+             LIMIT 1"
+        );
+        $memberStmt->execute([':id' => $memberId]);
+        $member = $memberStmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$member) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Data anggota tidak ditemukan.']);
+            return;
+        }
+
+        $emailCheckStmt = $db->prepare('SELECT id FROM tbr_users WHERE email = :email AND id != :id LIMIT 1');
+        $emailCheckStmt->execute([
+            ':email' => $email,
+            ':id' => $memberId,
+        ]);
+        if ($emailCheckStmt->fetch(\PDO::FETCH_ASSOC)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Email sudah digunakan oleh user lain.']);
+            return;
+        }
+
+        $oldAvatar = trim((string)($member['avatar'] ?? ''));
+        $newAvatar = $oldAvatar !== '' ? $oldAvatar : null;
+        $hasUploadedAvatar = isset($_FILES['avatar']) && (int)($_FILES['avatar']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+
+        if ($hasUploadedAvatar) {
+            $processedAvatar = $this->processAvatarUpload($_FILES['avatar']);
+            if ($processedAvatar === null) {
+                http_response_code(422);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Upload avatar gagal. Pastikan file berupa JPG, PNG, atau WEBP.',
+                ]);
+                return;
+            }
+            $newAvatar = $processedAvatar;
+        } elseif ($removeAvatar) {
+            $newAvatar = null;
+        }
+
+        $sql = "UPDATE tbr_users
+                SET name = :name,
+                    avatar = :avatar,
+                    gender = :gender,
+                    phone = :phone,
+                    address = :address,
+                    email = :email,
+                    status = :status,
+                    updated_at = NOW()";
+        $params = [
+            ':name' => $name,
+            ':avatar' => $newAvatar,
+            ':gender' => $gender,
+            ':phone' => $phone !== '' ? $phone : null,
+            ':address' => $address !== '' ? $address : null,
+            ':email' => $email,
+            ':status' => $status,
+            ':id' => $memberId,
+        ];
+
+        if ($password !== '') {
+            $sql .= ", password = :password";
+            $params[':password'] = password_hash($password, PASSWORD_BCRYPT);
+        }
+
+        $sql .= " WHERE id = :id LIMIT 1";
+
+        $updateStmt = $db->prepare($sql);
+        $updateStmt->execute($params);
+
+        if (($hasUploadedAvatar || $removeAvatar) && $oldAvatar !== '' && $oldAvatar !== $newAvatar) {
+            $oldAvatarPath = dirname(__DIR__, 2) . '/storage/avatars/members/' . $oldAvatar;
+            if (is_file($oldAvatarPath)) {
+                @unlink($oldAvatarPath);
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Data anggota berhasil diperbarui.',
+        ]);
+    }
+
+    /**
      * Serve member avatar from storage.
      */
     public function avatar(): void

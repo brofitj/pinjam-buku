@@ -14,7 +14,9 @@ return [
     '/member/edit' => dirname(__DIR__) . '/app/Views/admin/member/edit.php',
 
     '/api/members' => [MemberController::class, 'index'],
+    '/api/members/show' => [MemberController::class, 'show'],
     '/api/members/create' => [MemberController::class, 'store'],
+    '/api/members/update' => [MemberController::class, 'update'],
     '/api/members/delete' => [MemberController::class, 'delete'],
     '/member/avatar' => [MemberController::class, 'avatar'],
     
