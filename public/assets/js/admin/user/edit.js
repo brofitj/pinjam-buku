@@ -14,6 +14,34 @@ $(function () {
         alert(message);
     }
 
+    function parseErrorMessage(xhr, fallbackMessage) {
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            return xhr.responseJSON.message;
+        }
+
+        var text = xhr.responseText || '';
+        if (text) {
+            try {
+                var jsonDirect = JSON.parse(text);
+                if (jsonDirect && jsonDirect.message) {
+                    return jsonDirect.message;
+                }
+            } catch (e1) {}
+
+            var start = text.lastIndexOf('{');
+            if (start >= 0) {
+                try {
+                    var jsonTail = JSON.parse(text.slice(start));
+                    if (jsonTail && jsonTail.message) {
+                        return jsonTail.message;
+                    }
+                } catch (e2) {}
+            }
+        }
+
+        return fallbackMessage;
+    }
+
     if (!$form.length) return;
 
     function getUserId() {
@@ -114,10 +142,7 @@ $(function () {
                 showToast((res && res.message) ? res.message : 'Gagal memperbarui pengelola.', 'destructive');
             },
             error: function (xhr) {
-                var message = 'Gagal memperbarui pengelola.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    message = xhr.responseJSON.message;
-                }
+                var message = parseErrorMessage(xhr, 'Gagal memperbarui pengelola.');
                 showToast(message, 'destructive');
             },
             complete: function () {

@@ -134,6 +134,17 @@ class UserController
             return;
         }
 
+        $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+        $postMaxBytes = $this->toBytes((string)ini_get('post_max_size'));
+        if ($postMaxBytes > 0 && $contentLength > $postMaxBytes) {
+            http_response_code(413);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Ukuran total upload melebihi batas server (' . $this->toReadableSize($postMaxBytes) . '). Perkecil file atau minta admin menaikkan post_max_size.',
+            ]);
+            return;
+        }
+
         $name     = trim($_POST['name'] ?? '');
         $gender   = trim($_POST['gender'] ?? '');
         $phone    = trim($_POST['phone'] ?? '');
@@ -142,6 +153,15 @@ class UserController
         $password = (string)($_POST['password'] ?? '');
         $status   = trim($_POST['status'] ?? '');
         $role     = 'librarian';
+
+        if ($contentLength > 0 && empty($_POST) && empty($_FILES)) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Ukuran total upload melebihi batas server (' . $this->toReadableSize($postMaxBytes) . '). Perkecil file atau minta admin menaikkan post_max_size.',
+            ]);
+            return;
+        }
 
         if ($name === '' || $email === '' || $password === '') {
             http_response_code(422);
@@ -308,6 +328,17 @@ class UserController
             return;
         }
 
+        $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+        $postMaxBytes = $this->toBytes((string)ini_get('post_max_size'));
+        if ($postMaxBytes > 0 && $contentLength > $postMaxBytes) {
+            http_response_code(413);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Ukuran total upload melebihi batas server (' . $this->toReadableSize($postMaxBytes) . '). Perkecil file atau minta admin menaikkan post_max_size.',
+            ]);
+            return;
+        }
+
         $userId   = (int)($_POST['id'] ?? 0);
         $name     = trim($_POST['name'] ?? '');
         $gender   = trim($_POST['gender'] ?? '');
@@ -317,6 +348,15 @@ class UserController
         $password = (string)($_POST['password'] ?? '');
         $status   = trim($_POST['status'] ?? '');
         $removeAvatar = in_array((string)($_POST['avatar_remove'] ?? ''), ['1', 'true', 'on'], true);
+
+        if ($contentLength > 0 && empty($_POST) && empty($_FILES)) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Ukuran total upload melebihi batas server (' . $this->toReadableSize($postMaxBytes) . '). Perkecil file atau minta admin menaikkan post_max_size.',
+            ]);
+            return;
+        }
 
         if ($userId <= 0) {
             http_response_code(422);
@@ -542,6 +582,44 @@ class UserController
         header('Content-Type: image/jpeg');
         header('Content-Length: ' . (string)filesize($path));
         readfile($path);
+    }
+
+    private function toBytes(string $value): int
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return 0;
+        }
+
+        $number = (float)$value;
+        $unit = strtolower(substr($value, -1));
+
+        if ($unit === 'g') {
+            return (int)($number * 1024 * 1024 * 1024);
+        }
+        if ($unit === 'm') {
+            return (int)($number * 1024 * 1024);
+        }
+        if ($unit === 'k') {
+            return (int)($number * 1024);
+        }
+
+        return (int)$number;
+    }
+
+    private function toReadableSize(int $bytes): string
+    {
+        if ($bytes >= 1024 * 1024 * 1024) {
+            return round($bytes / (1024 * 1024 * 1024), 2) . ' GB';
+        }
+        if ($bytes >= 1024 * 1024) {
+            return round($bytes / (1024 * 1024), 2) . ' MB';
+        }
+        if ($bytes >= 1024) {
+            return round($bytes / 1024, 2) . ' KB';
+        }
+
+        return $bytes . ' B';
     }
 
     private function processAvatarUpload(array $file): ?string

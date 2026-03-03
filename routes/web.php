@@ -2,6 +2,7 @@
 
 use App\Controllers\AuthController;
 use App\Controllers\BookController;
+use App\Controllers\DashboardController;
 use App\Controllers\MemberController;
 use App\Controllers\UserController;
 
@@ -37,6 +38,7 @@ return [
     '/api/books/create' => [BookController::class, 'store'],
     '/api/books/update' => [BookController::class, 'update'],
     '/api/books/delete' => [BookController::class, 'delete'],
+    '/api/dashboard/stats' => [DashboardController::class, 'stats'],
     '/book/cover' => [BookController::class, 'cover'],
     '/user/avatar' => [UserController::class, 'avatar'],
     '/member/avatar' => [MemberController::class, 'avatar'],
