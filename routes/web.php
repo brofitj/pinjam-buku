@@ -42,6 +42,7 @@ return [
     '/api/books/update' => [BookController::class, 'update'],
     '/api/books/delete' => [BookController::class, 'delete'],
     '/api/transactions' => [TransactionController::class, 'index'],
+    '/api/transactions/update-status' => [TransactionController::class, 'updateStatus'],
     '/api/member/transactions' => [MemberTransactionController::class, 'index'],
     '/api/member/books' => [MemberTransactionController::class, 'books'],
     '/api/member/transactions/create' => [MemberTransactionController::class, 'store'],

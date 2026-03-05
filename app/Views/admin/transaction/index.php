@@ -20,9 +20,6 @@ ob_start();
             <h1 class="text-xl font-medium leading-none text-mono">
                 Transaksi
             </h1>
-            <div class="flex items-center gap-2 text-sm font-normal text-secondary-foreground">
-                Daftar transaksi peminjaman buku.
-            </div>
         </div>
     </div>
 </div>
@@ -53,25 +50,25 @@ ob_start();
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[220px]" data-sort-field="member_name">
+                                    <th class="w-[200px]" data-sort-field="member_name">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">Anggota</span>
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[130px]" data-sort-field="borrow_date">
+                                    <th class="w-[150px]" data-sort-field="borrow_date">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">Pinjam</span>
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[130px]" data-sort-field="due_date">
+                                    <th class="w-[150px]" data-sort-field="due_date">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">Jatuh Tempo</span>
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[130px]" data-sort-field="return_date">
+                                    <th class="w-[150px]" data-sort-field="return_date">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">Kembali</span>
                                             <span class="kt-table-col-sort"></span>
@@ -83,18 +80,19 @@ ob_start();
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[140px]" data-sort-field="fine_amount">
+                                    <th class="w-[150px]" data-sort-field="fine_amount">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">Denda</span>
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
-                                    <th class="w-[130px]" data-sort-field="status">
+                                    <th class="w-[120px]" data-sort-field="status">
                                         <span class="kt-table-col">
                                             <span class="kt-table-col-label">Status</span>
                                             <span class="kt-table-col-sort"></span>
                                         </span>
                                     </th>
+                                    <th class="w-[60px]"></th>
                                 </tr>
                             </thead>
                             <tbody id="transaction_table_body"></tbody>
@@ -108,6 +106,51 @@ ob_start();
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="kt-modal" data-kt-modal="true" id="approve_transaction_modal">
+    <div class="kt-modal-content max-w-[500px] top-[5%]">
+        <div class="kt-modal-header">
+            <h3 class="kt-modal-title">Konfirmasi Approval</h3>
+            <button
+                type="button"
+                class="kt-modal-close"
+                aria-label="Close modal"
+                data-kt-modal-dismiss="#approve_transaction_modal"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-x"
+                    aria-hidden="true"
+                >
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="kt-modal-body">
+            <div class="text-sm text-foreground font-normal">
+                Transaksi <span id="approve_transaction_code" class="font-semibold text-mono">-</span>
+                akan diubah ke status <span class="font-semibold text-mono">Dipinjam</span>.
+                Apakah Anda yakin ingin melanjutkan?
+            </div>
+        </div>
+        <div class="kt-modal-footer">
+            <div></div>
+            <div class="flex gap-4">
+                <button class="kt-btn kt-btn-secondary" data-kt-modal-dismiss="#approve_transaction_modal">Batal</button>
+                <button class="kt-btn kt-btn-primary" id="confirm_approve_transaction" type="button">Ya, Ubah Status</button>
             </div>
         </div>
     </div>
