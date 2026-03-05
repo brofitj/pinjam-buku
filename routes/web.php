@@ -11,6 +11,7 @@ use App\Controllers\UserController;
 return [
     '/' => [AuthController::class, 'login'],
     '/login' => [AuthController::class, 'login'],
+    '/register' => [AuthController::class, 'register'],
     '/logout' => [AuthController::class, 'logout'],
 
     '/dashboard' => dirname(__DIR__) . '/app/Views/admin/dashboard/index.php',
