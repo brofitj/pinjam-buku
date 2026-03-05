@@ -36,6 +36,17 @@ class TransactionController
         $q = trim($_GET['q'] ?? '');
         $where = '1=1';
         $params = [];
+        $filterMode = strtolower(trim((string)($_GET['filter_mode'] ?? 'pending')));
+        if (!in_array($filterMode, ['pending', 'other'], true)) {
+            $filterMode = 'pending';
+        }
+
+        $pendingStatusSql = "LOWER(COALESCE(t.status, '')) IN ('waiting', 'menunggu', 'return_requested', 'menunggu_pengembalian')";
+        if ($filterMode === 'pending') {
+            $where .= " AND ($pendingStatusSql)";
+        } else {
+            $where .= " AND NOT ($pendingStatusSql)";
+        }
 
         if ($q !== '') {
             $where .= " AND (
@@ -123,6 +134,7 @@ class TransactionController
                 'page' => $page,
                 'per_page' => $perPage,
                 'last_page' => max(1, (int)ceil($total / $perPage)),
+                'filter_mode' => $filterMode,
             ],
         ]);
     }

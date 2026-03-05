@@ -9,12 +9,15 @@ $(function () {
     var $confirmApproveBtn = $('#confirm_approve_transaction');
     var $approveReturnTransactionCode = $('#approve_return_transaction_code');
     var $confirmApproveReturnBtn = $('#confirm_approve_return');
+    var $tabPending = $('#transaction_tab_pending');
+    var $tabOther = $('#transaction_tab_other');
 
     var currentPage = 1;
     var lastPage = 1;
     var perPage = 10;
     var sortField = 'id';
     var sortDir = 'desc';
+    var activeFilterMode = 'pending';
     var selectedTransactionId = 0;
     var selectedReturnTransactionId = 0;
     var isApproving = false;
@@ -186,6 +189,19 @@ $(function () {
         });
     }
 
+    function applyTabUi() {
+        if (!$tabPending.length || !$tabOther.length) return;
+
+        if (activeFilterMode === 'pending') {
+            $tabPending.removeClass('kt-btn-outline').addClass('kt-btn-primary');
+            $tabOther.removeClass('kt-btn-primary').addClass('kt-btn-outline');
+            return;
+        }
+
+        $tabPending.removeClass('kt-btn-primary').addClass('kt-btn-outline');
+        $tabOther.removeClass('kt-btn-outline').addClass('kt-btn-primary');
+    }
+
     function loadTransactions(page) {
         currentPage = page || 1;
 
@@ -198,7 +214,8 @@ $(function () {
                 per_page: perPage,
                 q: $search.val() || '',
                 sort_by: sortField,
-                sort_dir: sortDir
+                sort_dir: sortDir,
+                filter_mode: activeFilterMode
             },
             success: function (res) {
                 var data = res.data || [];
@@ -214,6 +231,7 @@ $(function () {
                     $pageInfo.text('Halaman ' + currentPage + ' dari ' + lastPage);
                 }
 
+                applyTabUi();
                 renderTable(data);
                 if (window.KTMenu && typeof window.KTMenu.createInstances === 'function') {
                     window.KTMenu.createInstances();
@@ -262,6 +280,18 @@ $(function () {
         $sortControls.removeClass('is-sorted-asc is-sorted-desc');
         $(this).addClass(sortDir === 'asc' ? 'is-sorted-asc' : 'is-sorted-desc');
 
+        loadTransactions(1);
+    });
+
+    $tabPending.on('click', function () {
+        if (activeFilterMode === 'pending') return;
+        activeFilterMode = 'pending';
+        loadTransactions(1);
+    });
+
+    $tabOther.on('click', function () {
+        if (activeFilterMode === 'other') return;
+        activeFilterMode = 'other';
         loadTransactions(1);
     });
 

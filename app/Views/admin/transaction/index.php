@@ -28,10 +28,18 @@ ob_start();
     <div class="grid gap-5 lg:gap-7.5">
         <div class="kt-card kt-card-grid min-w-full">
             <div class="kt-card-header flex-wrap py-5">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <button id="transaction_tab_pending" class="kt-btn kt-btn-sm kt-btn-primary" type="button">Perlu Persetujuan</button>
+                        <button id="transaction_tab_other" class="kt-btn kt-btn-sm kt-btn-outline" type="button">Riwayat Lainnya</button>
+                    </div>
+                </div>
+            </div>
+            <div class="kt-card-header flex-wrap py-5">
                 <h3 class="kt-card-title">
                     <span id="transaction_count">0</span> Transaksi
                 </h3>
-                <div class="flex items-center gap-6">
+                <div class="flex items-center gap-3 flex-wrap">
                     <label class="kt-input">
                         <i class="ki-filled ki-magnifier"></i>
                         <input id="transaction_search" placeholder="Cari kode nama anggota status" type="text" value=""/>
