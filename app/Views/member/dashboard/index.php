@@ -41,6 +41,13 @@ ob_start();
                 <table class="kt-table table-fixed kt-table-border">
                     <thead>
                         <tr>
+                            <th class="w-[60px]"></th>
+                            <th class="w-[200px]" data-sort-field="status">
+                                <span class="kt-table-col">
+                                    <span class="kt-table-col-label">Status</span>
+                                    <span class="kt-table-col-sort"></span>
+                                </span>
+                            </th>
                             <th class="w-[170px]" data-sort-field="transaction_code">
                                 <span class="kt-table-col">
                                     <span class="kt-table-col-label">Kode</span>
@@ -77,12 +84,6 @@ ob_start();
                                     <span class="kt-table-col-sort"></span>
                                 </span>
                             </th>
-                            <th class="w-[130px]" data-sort-field="status">
-                                <span class="kt-table-col">
-                                    <span class="kt-table-col-label">Status</span>
-                                    <span class="kt-table-col-sort"></span>
-                                </span>
-                            </th>
                         </tr>
                     </thead>
                     <tbody id="member_transaction_table_body"></tbody>
@@ -94,6 +95,51 @@ ob_start();
                     <span id="member_transaction_page_info">Halaman 1 dari 1</span>
                     <button id="member_transaction_next" class="kt-btn kt-btn-sm kt-btn-outline">Next</button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="kt-modal" data-kt-modal="true" id="request_return_modal">
+    <div class="kt-modal-content max-w-[500px] top-[5%]">
+        <div class="kt-modal-header">
+            <h3 class="kt-modal-title">Konfirmasi Pengajuan</h3>
+            <button
+                type="button"
+                class="kt-modal-close"
+                aria-label="Close modal"
+                data-kt-modal-dismiss="#request_return_modal"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-x"
+                    aria-hidden="true"
+                >
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="kt-modal-body">
+            <div class="text-sm text-foreground font-normal">
+                Transaksi <span id="request_return_transaction_code" class="font-semibold text-mono">-</span>
+                akan diajukan untuk status <span class="font-semibold text-mono">Persetujuan Pengembalian</span>.
+                Apakah Anda yakin ingin melanjutkan?
+            </div>
+        </div>
+        <div class="kt-modal-footer">
+            <div></div>
+            <div class="flex gap-4">
+                <button class="kt-btn kt-btn-secondary" data-kt-modal-dismiss="#request_return_modal">Batal</button>
+                <button class="kt-btn kt-btn-primary" id="confirm_request_return" type="button">Ya, Ajukan</button>
             </div>
         </div>
     </div>

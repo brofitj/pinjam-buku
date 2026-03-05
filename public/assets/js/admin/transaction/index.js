@@ -7,6 +7,8 @@ $(function () {
     var $nextBtn = $('#transaction_next');
     var $approveTransactionCode = $('#approve_transaction_code');
     var $confirmApproveBtn = $('#confirm_approve_transaction');
+    var $approveReturnTransactionCode = $('#approve_return_transaction_code');
+    var $confirmApproveReturnBtn = $('#confirm_approve_return');
 
     var currentPage = 1;
     var lastPage = 1;
@@ -14,7 +16,9 @@ $(function () {
     var sortField = 'id';
     var sortDir = 'desc';
     var selectedTransactionId = 0;
+    var selectedReturnTransactionId = 0;
     var isApproving = false;
+    var isApprovingReturn = false;
 
     function showToast(message, variant) {
         if (window.KTToast && typeof window.KTToast.show === 'function') {
@@ -46,6 +50,24 @@ $(function () {
         $modalTrigger.remove();
     }
 
+    function closeApproveReturnModal() {
+        $('[data-kt-modal-dismiss="#approve_return_modal"]').first().trigger('click');
+    }
+
+    function openApproveReturnModal(transactionId, transactionCode) {
+        selectedReturnTransactionId = parseInt(transactionId, 10) || 0;
+        $approveReturnTransactionCode.text(transactionCode || '-');
+
+        var $modalTrigger = $('<button>', {
+            type: 'button',
+            'data-kt-modal-toggle': '#approve_return_modal'
+        }).hide();
+
+        $('body').append($modalTrigger);
+        $modalTrigger.trigger('click');
+        $modalTrigger.remove();
+    }
+
     function escapeHtml(value) {
         return String(value == null ? '' : value)
             .replace(/&/g, '&amp;')
@@ -69,7 +91,10 @@ $(function () {
     function getStatusBadge(statusRaw) {
         var status = String(statusRaw || '').toLowerCase();
         if (status === 'waiting' || status === 'menunggu') {
-            return '<span class="kt-badge kt-badge-warning kt-badge-outline">Menunggu</span>';
+            return '<span class="kt-badge kt-badge-warning kt-badge-outline">Persetujuan Peminjaman</span>';
+        }
+        if (status === 'return_requested' || status === 'menunggu_pengembalian') {
+            return '<span class="kt-badge kt-badge-info kt-badge-outline">Persetujuan Pengembalian</span>';
         }
         if (status === 'returned' || status === 'selesai') {
             return '<span class="kt-badge kt-badge-success kt-badge-outline">Selesai</span>';
@@ -102,22 +127,36 @@ $(function () {
         $.each(items, function (_, item) {
             var status = String(item.status || '').toLowerCase();
             var isWaiting = status === 'waiting' || status === 'menunggu';
+            var isReturnRequested = status === 'return_requested' || status === 'menunggu_pengembalian';
             var actionHtml = '';
 
             if (isWaiting) {
                 actionHtml =
                     '<div class="kt-menu" data-kt-menu="true">' +
-                        '<div class="kt-menu-item" data-kt-menu-item-offset="0, 10px" data-kt-menu-item-placement="bottom-end" data-kt-menu-item-toggle="dropdown" data-kt-menu-item-trigger="click">' +
+                        '<div class="kt-menu-item" data-kt-menu-item-offset="0, 10px" data-kt-menu-item-placement="bottom-start" data-kt-menu-item-toggle="dropdown" data-kt-menu-item-trigger="click">' +
                             '<button class="kt-menu-toggle kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" type="button">' +
                                 '<i class="ki-filled ki-dots-vertical text-lg"></i>' +
                             '</button>' +
                             '<div class="kt-menu-dropdown kt-menu-default w-full max-w-[175px]" data-kt-menu-dismiss="true">' +
                                 '<div class="kt-menu-item">' +
                                     '<a class="kt-menu-link btn-open-approve-modal" href="#" data-transaction-id="' + item.id + '" data-transaction-code="' + escapeHtml(item.transaction_code || '-') + '">' +
-                                        '<span class="kt-menu-icon">' +
-                                            '<i class="ki-filled ki-delivery-3"></i>' +
-                                        '</span>' +
-                                        '<span class="kt-menu-title">Dipinjam</span>' +
+                                        '<span class="kt-menu-title">Setujui Peminjaman</span>' +
+                                    '</a>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            } else if (isReturnRequested) {
+                actionHtml =
+                    '<div class="kt-menu" data-kt-menu="true">' +
+                        '<div class="kt-menu-item" data-kt-menu-item-offset="0, 10px" data-kt-menu-item-placement="bottom-start" data-kt-menu-item-toggle="dropdown" data-kt-menu-item-trigger="click">' +
+                            '<button class="kt-menu-toggle kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" type="button">' +
+                                '<i class="ki-filled ki-dots-vertical text-lg"></i>' +
+                            '</button>' +
+                            '<div class="kt-menu-dropdown kt-menu-default w-full max-w-[200px]" data-kt-menu-dismiss="true">' +
+                                '<div class="kt-menu-item">' +
+                                    '<a class="kt-menu-link btn-approve-return" href="#" data-transaction-id="' + item.id + '" data-transaction-code="' + escapeHtml(item.transaction_code || '-') + '">' +
+                                        '<span class="kt-menu-title">Setujui Pengembalian</span>' +
                                     '</a>' +
                                 '</div>' +
                             '</div>' +
@@ -132,6 +171,8 @@ $(function () {
 
             var rowHtml =
                 '<tr>' +
+                    '<td>' + actionHtml + '</td>' +
+                    '<td>' + getStatusBadge(item.status) + '</td>' +
                     '<td class="text-sm text-foreground font-medium">' + escapeHtml(item.transaction_code || '-') + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + escapeHtml(item.member_name || '-') + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + formatDate(item.borrow_date) + '</td>' +
@@ -139,8 +180,6 @@ $(function () {
                     '<td class="text-sm text-foreground font-normal">' + formatDate(item.return_date) + '</td>' +
                     '<td class="text-sm text-foreground font-medium">' + escapeHtml(item.total_books || 0) + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + escapeHtml(formatCurrency(item.fine_amount)) + '</td>' +
-                    '<td>' + getStatusBadge(item.status) + '</td>' +
-                    '<td>' + actionHtml + '</td>' +
                 '</tr>';
 
             $tbody.append(rowHtml);
@@ -273,6 +312,55 @@ $(function () {
             complete: function () {
                 isApproving = false;
                 $confirmApproveBtn.prop('disabled', false).text('Ya, Ubah Status');
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-approve-return', function (e) {
+        e.preventDefault();
+        var transactionCode = $(this).data('transaction-code') || '-';
+        var transactionId = parseInt($(this).data('transaction-id'), 10) || 0;
+        openApproveReturnModal(transactionId, transactionCode);
+    });
+
+    $confirmApproveReturnBtn.on('click', function () {
+        if (isApprovingReturn) return;
+
+        var transactionId = selectedReturnTransactionId;
+        if (!transactionId) {
+            showToast('ID transaksi tidak valid.', 'destructive');
+            return;
+        }
+
+        isApprovingReturn = true;
+        $confirmApproveReturnBtn.prop('disabled', true).text('Memproses...');
+
+        $.ajax({
+            url: '/api/transactions/approve-return',
+            method: 'POST',
+            dataType: 'json',
+            data: { id: transactionId },
+            success: function (res) {
+                if (res && res.success) {
+                    selectedReturnTransactionId = 0;
+                    closeApproveReturnModal();
+                    loadTransactions(currentPage);
+                    showToast((res && res.message) ? res.message : 'Pengembalian transaksi berhasil di-approve.', 'success');
+                    return;
+                }
+
+                showToast((res && res.message) ? res.message : 'Gagal approve pengembalian transaksi.', 'destructive');
+            },
+            error: function (xhr) {
+                var message = 'Gagal approve pengembalian transaksi.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                showToast(message, 'destructive');
+            },
+            complete: function () {
+                isApprovingReturn = false;
+                $confirmApproveReturnBtn.prop('disabled', false).text('Ya, Ubah Status');
             }
         });
     });

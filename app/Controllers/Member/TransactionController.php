@@ -377,6 +377,94 @@ class TransactionController
         ]);
     }
 
+    /**
+     * Submit return request for an active borrowing transaction.
+     */
+    public function requestReturn(): void
+    {
+        header('Content-Type: application/json');
+
+        $userId = $this->getAuthenticatedMemberId();
+        if ($userId === null) {
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        $transactionId = (int)($_POST['id'] ?? 0);
+        if ($transactionId <= 0) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'ID transaksi tidak valid.']);
+            return;
+        }
+
+        $db = Database::getInstance();
+
+        try {
+            $db->beginTransaction();
+
+            $findStmt = $db->prepare(
+                "SELECT id, status
+                 FROM tbr_transactions
+                 WHERE id = :id AND user_id = :user_id
+                 LIMIT 1
+                 FOR UPDATE"
+            );
+            $findStmt->execute([
+                ':id' => $transactionId,
+                ':user_id' => $userId,
+            ]);
+            $transaction = $findStmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$transaction) {
+                $db->rollBack();
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Transaksi tidak ditemukan.']);
+                return;
+            }
+
+            $status = strtolower((string)($transaction['status'] ?? ''));
+            if (!in_array($status, ['borrowed', 'dipinjam', 'overdue', 'terlambat'], true)) {
+                $db->rollBack();
+                http_response_code(422);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Pengajuan pengembalian hanya untuk transaksi yang sedang dipinjam.',
+                ]);
+                return;
+            }
+
+            $updateStmt = $db->prepare(
+                "UPDATE tbr_transactions
+                 SET status = 'return_requested', updated_at = NOW()
+                 WHERE id = :id"
+            );
+            $updateStmt->execute([':id' => $transactionId]);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Gagal mengajukan pengembalian buku.',
+            ]);
+            return;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Pengajuan pengembalian berhasil dikirim. Menunggu approval admin.',
+        ]);
+    }
+
     private function generateTransactionCode(\PDO $db): string
     {
         $prefix = 'TRX' . date('Ymd');
