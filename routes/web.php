@@ -16,6 +16,7 @@ return [
 
     '/dashboard' => dirname(__DIR__) . '/app/Views/admin/dashboard/index.php',
     '/transaction' => dirname(__DIR__) . '/app/Views/admin/transaction/index.php',
+    '/transaction/detail' => dirname(__DIR__) . '/app/Views/admin/transaction/detail.php',
     '/book' => dirname(__DIR__) . '/app/Views/admin/book/index.php',
     '/book/add' => dirname(__DIR__) . '/app/Views/admin/book/add.php',
     '/book/edit' => dirname(__DIR__) . '/app/Views/admin/book/edit.php',
@@ -43,9 +44,11 @@ return [
     '/api/books/update' => [BookController::class, 'update'],
     '/api/books/delete' => [BookController::class, 'delete'],
     '/api/transactions' => [TransactionController::class, 'index'],
+    '/api/transactions/show' => [TransactionController::class, 'show'],
     '/api/transactions/update-status' => [TransactionController::class, 'updateStatus'],
     '/api/transactions/approve-return' => [TransactionController::class, 'approveReturn'],
     '/api/member/transactions' => [MemberTransactionController::class, 'index'],
+    '/api/member/transactions/show' => [MemberTransactionController::class, 'show'],
     '/api/member/books' => [MemberTransactionController::class, 'books'],
     '/api/member/transactions/create' => [MemberTransactionController::class, 'store'],
     '/api/member/transactions/request-return' => [MemberTransactionController::class, 'requestReturn'],
@@ -56,4 +59,5 @@ return [
     
     '/member/dashboard' => dirname(__DIR__) . '/app/Views/member/dashboard/index.php',
     '/member/dashboard/create' => dirname(__DIR__) . '/app/Views/member/transaction/create.php',
+    '/member/dashboard/detail' => dirname(__DIR__) . '/app/Views/member/transaction/detail.php',
 ];

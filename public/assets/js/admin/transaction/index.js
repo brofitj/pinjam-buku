@@ -179,7 +179,11 @@ $(function () {
                 '<tr>' +
                     '<td>' + actionHtml + '</td>' +
                     '<td>' + getStatusBadge(item.status) + '</td>' +
-                    '<td class="text-sm text-foreground font-medium">' + escapeHtml(item.transaction_code || '-') + '</td>' +
+                    '<td class="text-sm text-foreground font-medium">' +
+                        '<a class="kt-link kt-link-underlined text-primary" href="/transaction/detail?id=' + item.id + '">' +
+                            escapeHtml(item.transaction_code || '-') +
+                        '</a>' +
+                    '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + escapeHtml(item.member_name || '-') + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + formatDate(item.borrow_date) + '</td>' +
                     '<td class="text-sm text-foreground font-normal">' + formatDate(item.due_date) + '</td>' +

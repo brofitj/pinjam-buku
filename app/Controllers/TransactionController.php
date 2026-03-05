@@ -184,6 +184,82 @@ class TransactionController
     }
 
     /**
+     * Return transaction detail by id as JSON.
+     */
+    public function show(): void
+    {
+        header('Content-Type: application/json');
+
+        if (!$this->isAuthenticated()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthenticated']);
+            return;
+        }
+
+        $transactionId = (int)($_GET['id'] ?? 0);
+        if ($transactionId <= 0) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'ID transaksi tidak valid.']);
+            return;
+        }
+
+        $db = Database::getInstance();
+
+        $transactionStmt = $db->prepare(
+            "SELECT
+                t.id,
+                t.transaction_code,
+                t.borrow_date,
+                t.due_date,
+                t.return_date,
+                t.status,
+                t.fine_amount,
+                u.id AS member_id,
+                u.name AS member_name,
+                COALESCE(SUM(td.quantity), 0) AS total_books
+             FROM tbr_transactions t
+             INNER JOIN tbr_users u ON u.id = t.user_id
+             LEFT JOIN tbr_transaction_details td ON td.transaction_id = t.id
+             WHERE t.id = :id
+             GROUP BY
+                t.id, t.transaction_code, t.borrow_date, t.due_date, t.return_date, t.status, t.fine_amount, u.id, u.name
+             LIMIT 1"
+        );
+        $transactionStmt->execute([':id' => $transactionId]);
+        $transaction = $transactionStmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$transaction) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Transaksi tidak ditemukan.']);
+            return;
+        }
+
+        $detailStmt = $db->prepare(
+            "SELECT
+                td.book_id,
+                COALESCE(td.quantity, 1) AS quantity,
+                b.book_code,
+                b.title,
+                b.author,
+                b.cover_image
+             FROM tbr_transaction_details td
+             INNER JOIN tbr_books b ON b.id = td.book_id
+             WHERE td.transaction_id = :transaction_id
+             ORDER BY b.title ASC"
+        );
+        $detailStmt->execute([':transaction_id' => $transactionId]);
+        $items = $detailStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'transaction' => $transaction,
+                'items' => $items,
+            ],
+        ]);
+    }
+
+    /**
      * Update transaction status from waiting to borrowed.
      */
     public function updateStatus(): void
