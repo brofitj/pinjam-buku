@@ -1,6 +1,5 @@
 $(function () {
     var $tbody = $('#transaction_table_body');
-    var $countSpan = $('#transaction_count');
     var $search = $('#transaction_search');
     var $pageInfo = $('#transaction_page_info');
     var $prevBtn = $('#transaction_prev');
@@ -10,7 +9,11 @@ $(function () {
     var $approveReturnTransactionCode = $('#approve_return_transaction_code');
     var $confirmApproveReturnBtn = $('#confirm_approve_return');
     var $tabPending = $('#transaction_tab_pending');
+    var $tabOverdue = $('#transaction_tab_overdue');
     var $tabOther = $('#transaction_tab_other');
+    var $tabPendingCount = $('#transaction_tab_pending_count');
+    var $tabOverdueCount = $('#transaction_tab_overdue_count');
+    var $tabOtherCount = $('#transaction_tab_other_count');
 
     var currentPage = 1;
     var lastPage = 1;
@@ -190,15 +193,24 @@ $(function () {
     }
 
     function applyTabUi() {
-        if (!$tabPending.length || !$tabOther.length) return;
+        if (!$tabPending.length || !$tabOverdue.length || !$tabOther.length) return;
 
         if (activeFilterMode === 'pending') {
             $tabPending.removeClass('kt-btn-outline').addClass('kt-btn-primary');
+            $tabOverdue.removeClass('kt-btn-primary').addClass('kt-btn-outline');
+            $tabOther.removeClass('kt-btn-primary').addClass('kt-btn-outline');
+            return;
+        }
+
+        if (activeFilterMode === 'overdue') {
+            $tabPending.removeClass('kt-btn-primary').addClass('kt-btn-outline');
+            $tabOverdue.removeClass('kt-btn-outline').addClass('kt-btn-primary');
             $tabOther.removeClass('kt-btn-primary').addClass('kt-btn-outline');
             return;
         }
 
         $tabPending.removeClass('kt-btn-primary').addClass('kt-btn-outline');
+        $tabOverdue.removeClass('kt-btn-primary').addClass('kt-btn-outline');
         $tabOther.removeClass('kt-btn-outline').addClass('kt-btn-primary');
     }
 
@@ -223,8 +235,15 @@ $(function () {
 
                 lastPage = meta.last_page || 1;
 
-                if ($countSpan.length) {
-                    $countSpan.text(meta.total || data.length || 0);
+                var tabTotals = meta.tab_totals || {};
+                if ($tabPendingCount.length) {
+                    $tabPendingCount.text(tabTotals.pending || 0);
+                }
+                if ($tabOverdueCount.length) {
+                    $tabOverdueCount.text(tabTotals.overdue || 0);
+                }
+                if ($tabOtherCount.length) {
+                    $tabOtherCount.text(tabTotals.other || 0);
                 }
 
                 if ($pageInfo.length) {
@@ -286,6 +305,12 @@ $(function () {
     $tabPending.on('click', function () {
         if (activeFilterMode === 'pending') return;
         activeFilterMode = 'pending';
+        loadTransactions(1);
+    });
+
+    $tabOverdue.on('click', function () {
+        if (activeFilterMode === 'overdue') return;
+        activeFilterMode = 'overdue';
         loadTransactions(1);
     });
 

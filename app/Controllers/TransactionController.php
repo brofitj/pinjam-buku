@@ -34,22 +34,18 @@ class TransactionController
         $offset = ($page - 1) * $perPage;
 
         $q = trim($_GET['q'] ?? '');
-        $where = '1=1';
+        $baseWhere = '1=1';
         $params = [];
         $filterMode = strtolower(trim((string)($_GET['filter_mode'] ?? 'pending')));
-        if (!in_array($filterMode, ['pending', 'other'], true)) {
+        if (!in_array($filterMode, ['pending', 'overdue', 'other'], true)) {
             $filterMode = 'pending';
         }
 
         $pendingStatusSql = "LOWER(COALESCE(t.status, '')) IN ('waiting', 'menunggu', 'return_requested', 'menunggu_pengembalian')";
-        if ($filterMode === 'pending') {
-            $where .= " AND ($pendingStatusSql)";
-        } else {
-            $where .= " AND NOT ($pendingStatusSql)";
-        }
+        $overdueStatusSql = "LOWER(COALESCE(t.status, '')) IN ('overdue', 'terlambat')";
 
         if ($q !== '') {
-            $where .= " AND (
+            $baseWhere .= " AND (
                 t.transaction_code LIKE :q_code
                 OR u.name LIKE :q_name
                 OR t.status LIKE :q_status
@@ -59,6 +55,15 @@ class TransactionController
             $params[':q_code'] = $like;
             $params[':q_name'] = $like;
             $params[':q_status'] = $like;
+        }
+
+        $where = $baseWhere;
+        if ($filterMode === 'pending') {
+            $where .= " AND ($pendingStatusSql)";
+        } elseif ($filterMode === 'overdue') {
+            $where .= " AND ($overdueStatusSql)";
+        } else {
+            $where .= " AND NOT ($pendingStatusSql) AND NOT ($overdueStatusSql)";
         }
 
         $allowedSort = [
@@ -95,6 +100,40 @@ class TransactionController
         $countStmt = $db->prepare($countSql);
         $countStmt->execute($params);
         $total = (int)$countStmt->fetchColumn();
+
+        $pendingCountSql = "
+            SELECT COUNT(*) AS total
+            FROM tbr_transactions t
+            INNER JOIN tbr_users u ON u.id = t.user_id
+            WHERE $baseWhere
+              AND ($pendingStatusSql)
+        ";
+        $pendingCountStmt = $db->prepare($pendingCountSql);
+        $pendingCountStmt->execute($params);
+        $pendingTotal = (int)$pendingCountStmt->fetchColumn();
+
+        $overdueCountSql = "
+            SELECT COUNT(*) AS total
+            FROM tbr_transactions t
+            INNER JOIN tbr_users u ON u.id = t.user_id
+            WHERE $baseWhere
+              AND ($overdueStatusSql)
+        ";
+        $overdueCountStmt = $db->prepare($overdueCountSql);
+        $overdueCountStmt->execute($params);
+        $overdueTotal = (int)$overdueCountStmt->fetchColumn();
+
+        $otherCountSql = "
+            SELECT COUNT(*) AS total
+            FROM tbr_transactions t
+            INNER JOIN tbr_users u ON u.id = t.user_id
+            WHERE $baseWhere
+              AND NOT ($pendingStatusSql)
+              AND NOT ($overdueStatusSql)
+        ";
+        $otherCountStmt = $db->prepare($otherCountSql);
+        $otherCountStmt->execute($params);
+        $otherTotal = (int)$otherCountStmt->fetchColumn();
 
         $dataSql = "
             SELECT
@@ -135,6 +174,11 @@ class TransactionController
                 'per_page' => $perPage,
                 'last_page' => max(1, (int)ceil($total / $perPage)),
                 'filter_mode' => $filterMode,
+                'tab_totals' => [
+                    'pending' => $pendingTotal,
+                    'overdue' => $overdueTotal,
+                    'other' => $otherTotal,
+                ],
             ],
         ]);
     }
