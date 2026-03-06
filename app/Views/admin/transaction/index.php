@@ -153,6 +153,23 @@ ob_start();
                 akan diubah ke status <span class="font-semibold text-mono">Dipinjam</span>.
                 Apakah Anda yakin ingin melanjutkan?
             </div>
+            <div class="mt-4">
+                <label class="kt-form-label font-normal text-mono mb-2" for="approve_duration_days">
+                    Durasi Peminjaman (hari)
+                </label>
+                <input
+                    id="approve_duration_days"
+                    type="number"
+                    min="1"
+                    max="60"
+                    step="1"
+                    class="kt-input w-full"
+                    value="7"
+                />
+                <div class="text-xs text-secondary-foreground mt-2">
+                    Jatuh tempo akan dihitung berdasarkan durasi ini saat transaksi disetujui.
+                </div>
+            </div>
         </div>
         <div class="kt-modal-footer">
             <div></div>

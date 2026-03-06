@@ -5,6 +5,7 @@ $(function () {
     var $prevBtn = $('#transaction_prev');
     var $nextBtn = $('#transaction_next');
     var $approveTransactionCode = $('#approve_transaction_code');
+    var $approveDurationDays = $('#approve_duration_days');
     var $confirmApproveBtn = $('#confirm_approve_transaction');
     var $approveReturnTransactionCode = $('#approve_return_transaction_code');
     var $confirmApproveReturnBtn = $('#confirm_approve_return');
@@ -45,6 +46,9 @@ $(function () {
     function openApproveModal(transactionId, transactionCode) {
         selectedTransactionId = parseInt(transactionId, 10) || 0;
         $approveTransactionCode.text(transactionCode || '-');
+        if ($approveDurationDays.length) {
+            $approveDurationDays.val(7);
+        }
 
         var $modalTrigger = $('<button>', {
             type: 'button',
@@ -342,6 +346,12 @@ $(function () {
             return;
         }
 
+        var durationDays = parseInt($approveDurationDays.val(), 10);
+        if (!isFinite(durationDays) || durationDays < 1 || durationDays > 60) {
+            showToast('Durasi peminjaman wajib diisi antara 1 sampai 60 hari.', 'destructive');
+            return;
+        }
+
         isApproving = true;
         $confirmApproveBtn.prop('disabled', true).text('Memproses...');
 
@@ -349,7 +359,10 @@ $(function () {
             url: '/api/transactions/update-status',
             method: 'POST',
             dataType: 'json',
-            data: { id: transactionId },
+            data: {
+                id: transactionId,
+                duration_days: durationDays
+            },
             success: function (res) {
                 if (res && res.success) {
                     selectedTransactionId = 0;

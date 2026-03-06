@@ -364,7 +364,13 @@ class MemberController
             return;
         }
 
-        echo 'Email berhasil diverifikasi. Silakan login.';
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $_SESSION['login_success'] = 'Email berhasil diverifikasi. Silakan login.';
+        header('Location: /login');
+        exit;
     }
 
     /**

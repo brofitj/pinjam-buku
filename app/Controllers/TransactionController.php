@@ -279,9 +279,15 @@ class TransactionController
         }
 
         $transactionId = (int)($_POST['id'] ?? 0);
+        $durationDays = (int)($_POST['duration_days'] ?? 0);
         if ($transactionId <= 0) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'ID transaksi tidak valid.']);
+            return;
+        }
+        if ($durationDays < 1 || $durationDays > 60) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Durasi peminjaman harus di antara 1 sampai 60 hari.']);
             return;
         }
 
@@ -291,7 +297,7 @@ class TransactionController
             $db->beginTransaction();
 
             $findStmt = $db->prepare(
-                'SELECT id, status FROM tbr_transactions WHERE id = :id LIMIT 1 FOR UPDATE'
+                'SELECT id, status, borrow_date FROM tbr_transactions WHERE id = :id LIMIT 1 FOR UPDATE'
             );
             $findStmt->execute([':id' => $transactionId]);
             $transaction = $findStmt->fetch(\PDO::FETCH_ASSOC);
@@ -365,16 +371,24 @@ class TransactionController
                 ]);
             }
 
+            $borrowDateRaw = (string)($transaction['borrow_date'] ?? '');
+            $borrowDate = $borrowDateRaw !== '' ? $borrowDateRaw : date('Y-m-d');
+            $dueDate = date('Y-m-d', strtotime($borrowDate . ' +' . $durationDays . ' days'));
+
             $updateStmt = $db->prepare(
                 "UPDATE tbr_transactions
                  SET
                     status = 'borrowed',
-                    borrow_date = COALESCE(borrow_date, CURDATE()),
-                    due_date = COALESCE(due_date, DATE_ADD(CURDATE(), INTERVAL 7 DAY)),
+                    borrow_date = COALESCE(borrow_date, :borrow_date),
+                    due_date = :due_date,
                     updated_at = NOW()
                  WHERE id = :id"
             );
-            $updateStmt->execute([':id' => $transactionId]);
+            $updateStmt->execute([
+                ':id' => $transactionId,
+                ':borrow_date' => $borrowDate,
+                ':due_date' => $dueDate,
+            ]);
 
             $db->commit();
         } catch (\Throwable $e) {
