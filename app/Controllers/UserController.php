@@ -2,10 +2,17 @@
 
 namespace App\Controllers;
 
-use App\Core\Database;
+use App\Models\UserModel;
 
 class UserController
 {
+    private UserModel $userModel;
+
+    public function __construct()
+    {
+        $this->userModel = new UserModel();
+    }
+
     private function isAuthenticated(): bool
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -27,81 +34,15 @@ class UserController
             return;
         }
 
-        $db = Database::getInstance();
-
         $page    = max(1, (int)($_GET['page'] ?? 1));
         $perPage = max(1, min(50, (int)($_GET['per_page'] ?? 10)));
-        $offset  = ($page - 1) * $perPage;
-
         $q = trim($_GET['q'] ?? '');
-        $where = "r.name IN ('superadmin', 'librarian')";
-        $params = [];
-
-        if ($q !== '') {
-            $where .= " AND (
-                u.name LIKE :q_name
-                OR u.email LIKE :q_email
-                OR u.phone LIKE :q_phone
-                OR u.address LIKE :q_address
-                OR r.name LIKE :q_role
-            )";
-
-            $like = '%' . $q . '%';
-            $params[':q_name'] = $like;
-            $params[':q_email'] = $like;
-            $params[':q_phone'] = $like;
-            $params[':q_address'] = $like;
-            $params[':q_role'] = $like;
-        }
-
-        $allowedSort = [
-            'id' => 'u.id',
-            'name' => 'u.name',
-            'gender' => 'u.gender',
-            'status' => 'u.status',
-            'role' => 'r.name',
-        ];
 
         $sortBy = $_GET['sort_by'] ?? 'id';
         $sortDir = strtolower($_GET['sort_dir'] ?? 'desc');
-
-        if (!isset($allowedSort[$sortBy])) {
-            $sortBy = 'id';
-        }
-
-        if (!in_array($sortDir, ['asc', 'desc'], true)) {
-            $sortDir = 'asc';
-        }
-
-        $orderBy = $allowedSort[$sortBy] . ' ' . strtoupper($sortDir);
-
-        $countSql = "
-            SELECT COUNT(*) AS total
-            FROM tbr_users u
-            INNER JOIN tbr_roles r ON r.id = u.role_id
-            WHERE $where
-        ";
-        $countStmt = $db->prepare($countSql);
-        $countStmt->execute($params);
-        $total = (int)$countStmt->fetchColumn();
-
-        $dataSql = "
-            SELECT u.id, u.name, u.avatar, u.gender, u.email, u.phone, u.address, u.status, r.name AS role
-            FROM tbr_users u
-            INNER JOIN tbr_roles r ON r.id = u.role_id
-            WHERE $where
-            ORDER BY $orderBy
-            LIMIT :limit OFFSET :offset
-        ";
-        $dataStmt = $db->prepare($dataSql);
-        foreach ($params as $k => $v) {
-            $dataStmt->bindValue($k, $v);
-        }
-        $dataStmt->bindValue(':limit', $perPage, \PDO::PARAM_INT);
-        $dataStmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-        $dataStmt->execute();
-
-        $users = $dataStmt->fetchAll(\PDO::FETCH_ASSOC);
+        $result = $this->userModel->getAdminUsers($q, $page, $perPage, $sortBy, $sortDir);
+        $users = $result['data'];
+        $total = (int)$result['total'];
 
         header('Content-Type: application/json');
         echo json_encode([
@@ -209,20 +150,14 @@ class UserController
             }
         }
 
-        $db = Database::getInstance();
-
-        $roleStmt = $db->prepare("SELECT id FROM tbr_roles WHERE name = :name LIMIT 1");
-        $roleStmt->execute([':name' => $role]);
-        $roleData = $roleStmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$roleData) {
+        $roleId = $this->userModel->findRoleIdByName($role);
+        if ($roleId === null) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Role tidak ditemukan.']);
             return;
         }
 
-        $emailCheckStmt = $db->prepare('SELECT id FROM tbr_users WHERE email = :email LIMIT 1');
-        $emailCheckStmt->execute([':email' => $email]);
-        if ($emailCheckStmt->fetch(\PDO::FETCH_ASSOC)) {
+        if ($this->userModel->emailExists($email)) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Email sudah terdaftar.']);
             return;
@@ -233,31 +168,22 @@ class UserController
             $username = 'user' . time();
         }
 
-        $usernameCheckStmt = $db->prepare('SELECT id FROM tbr_users WHERE username = :username LIMIT 1');
-        $usernameCheckStmt->execute([':username' => $username]);
-        if ($usernameCheckStmt->fetch(\PDO::FETCH_ASSOC)) {
+        if ($this->userModel->usernameExists($username)) {
             $username .= rand(100, 999);
         }
 
-        $insertStmt = $db->prepare(
-            "INSERT INTO tbr_users
-                (name, avatar, gender, phone, address, join_date, role_id, email, username, password, status, created_at, updated_at)
-             VALUES
-                (:name, :avatar, :gender, :phone, :address, :join_date, :role_id, :email, :username, :password, :status, NOW(), NOW())"
-        );
-
-        $insertStmt->execute([
-            ':name'      => $name,
-            ':avatar'    => $avatarFileName,
-            ':gender'    => $gender,
-            ':phone'     => $phone !== '' ? $phone : null,
-            ':address'   => $address !== '' ? $address : null,
-            ':join_date' => date('Y-m-d'),
-            ':role_id'   => (int)$roleData['id'],
-            ':email'     => $email,
-            ':username'  => $username,
-            ':password'  => password_hash($password, PASSWORD_BCRYPT),
-            ':status'    => $status,
+        $this->userModel->createUser([
+            'name' => $name,
+            'avatar' => $avatarFileName,
+            'gender' => $gender,
+            'phone' => $phone !== '' ? $phone : null,
+            'address' => $address !== '' ? $address : null,
+            'join_date' => date('Y-m-d'),
+            'role_id' => $roleId,
+            'email' => $email,
+            'username' => $username,
+            'password' => password_hash($password, PASSWORD_BCRYPT),
+            'status' => $status,
         ]);
 
         echo json_encode([
@@ -286,16 +212,7 @@ class UserController
             return;
         }
 
-        $db = Database::getInstance();
-        $stmt = $db->prepare(
-            "SELECT u.id, u.name, u.avatar, u.gender, u.phone, u.address, u.email, u.status, r.name AS role
-             FROM tbr_users u
-             INNER JOIN tbr_roles r ON r.id = u.role_id
-             WHERE u.id = :id AND r.name IN ('superadmin', 'librarian')
-             LIMIT 1"
-        );
-        $stmt->execute([':id' => $userId]);
-        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $user = $this->userModel->findAdminUserById($userId);
 
         if (!$user) {
             http_response_code(404);
@@ -394,16 +311,7 @@ class UserController
             return;
         }
 
-        $db = Database::getInstance();
-        $stmt = $db->prepare(
-            "SELECT u.id, u.avatar, r.name AS role
-             FROM tbr_users u
-             INNER JOIN tbr_roles r ON r.id = u.role_id
-             WHERE u.id = :id AND r.name IN ('superadmin', 'librarian')
-             LIMIT 1"
-        );
-        $stmt->execute([':id' => $userId]);
-        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $user = $this->userModel->findAdminUserById($userId);
 
         if (!$user) {
             http_response_code(404);
@@ -411,12 +319,7 @@ class UserController
             return;
         }
 
-        $emailCheckStmt = $db->prepare('SELECT id FROM tbr_users WHERE email = :email AND id != :id LIMIT 1');
-        $emailCheckStmt->execute([
-            ':email' => $email,
-            ':id' => $userId,
-        ]);
-        if ($emailCheckStmt->fetch(\PDO::FETCH_ASSOC)) {
+        if ($this->userModel->emailExists($email, $userId)) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Email sudah digunakan oleh user lain.']);
             return;
@@ -441,34 +344,20 @@ class UserController
             $newAvatar = null;
         }
 
-        $sql = "UPDATE tbr_users
-                SET name = :name,
-                    avatar = :avatar,
-                    gender = :gender,
-                    phone = :phone,
-                    address = :address,
-                    email = :email,
-                    status = :status,
-                    updated_at = NOW()";
-        $params = [
-            ':name' => $name,
-            ':avatar' => $newAvatar,
-            ':gender' => $gender,
-            ':phone' => $phone !== '' ? $phone : null,
-            ':address' => $address !== '' ? $address : null,
-            ':email' => $email,
-            ':status' => $status,
-            ':id' => $userId,
-        ];
-
-        if ($password !== '') {
-            $sql .= ", password = :password";
-            $params[':password'] = password_hash($password, PASSWORD_BCRYPT);
-        }
-
-        $sql .= " WHERE id = :id LIMIT 1";
-        $updateStmt = $db->prepare($sql);
-        $updateStmt->execute($params);
+        $passwordHash = $password !== '' ? password_hash($password, PASSWORD_BCRYPT) : null;
+        $this->userModel->updateUser(
+            $userId,
+            [
+                'name' => $name,
+                'avatar' => $newAvatar,
+                'gender' => $gender,
+                'phone' => $phone !== '' ? $phone : null,
+                'address' => $address !== '' ? $address : null,
+                'email' => $email,
+                'status' => $status,
+            ],
+            $passwordHash
+        );
 
         if (($hasUploadedAvatar || $removeAvatar) && $oldAvatar !== '' && $oldAvatar !== $newAvatar) {
             $oldAvatarPathUsers = dirname(__DIR__, 2) . '/storage/avatars/users/' . $oldAvatar;
@@ -513,16 +402,7 @@ class UserController
             return;
         }
 
-        $db = Database::getInstance();
-        $stmt = $db->prepare(
-            "SELECT u.id, u.avatar, r.name AS role
-             FROM tbr_users u
-             INNER JOIN tbr_roles r ON r.id = u.role_id
-             WHERE u.id = :id AND r.name IN ('superadmin', 'librarian')
-             LIMIT 1"
-        );
-        $stmt->execute([':id' => $userId]);
-        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $user = $this->userModel->findAdminUserById($userId);
 
         if (!$user) {
             http_response_code(404);
@@ -536,8 +416,7 @@ class UserController
             return;
         }
 
-        $deleteStmt = $db->prepare('DELETE FROM tbr_users WHERE id = :id LIMIT 1');
-        $deleteStmt->execute([':id' => $userId]);
+        $this->userModel->deleteById($userId);
 
         $avatar = trim((string)($user['avatar'] ?? ''));
         if ($avatar !== '' && preg_match('/^[a-zA-Z0-9._-]+$/', $avatar) === 1) {
